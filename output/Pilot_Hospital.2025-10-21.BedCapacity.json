@@ -1,0 +1,884 @@
+{
+  "resourceType": "Bundle",
+  "id": "be2d9362-9bc8-45c9-91da-792c7053d7e0",
+  "meta": {
+    "profile": [
+      "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-measurereport-bundle"
+    ]
+  },
+  "type": "collection",
+  "timestamp": "2026-02-14T01:05:26+00:00",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:d18f3b2d-569a-4d67-afd5-1cacbf011815",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "d18f3b2d-569a-4d67-afd5-1cacbf011815",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-submitting-organization"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "https://www.cdc.gov/nhsn/OrgID",
+            "value": "YOUR_NHSN_ORG_ID"
+          }
+        ],
+        "active": true,
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                "code": "prov",
+                "display": "Healthcare Provider"
+              }
+            ]
+          }
+        ],
+        "name": "Your Hospital Name",
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "+1-555-000-0000",
+            "use": "work"
+          }
+        ],
+        "address": [
+          {
+            "line": [
+              "123 Main Street"
+            ],
+            "city": "City",
+            "state": "WA",
+            "postalCode": "98112",
+            "country": "USA"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:1850baa1-0342-4c9b-9663-60bd85ce2b06",
+      "resource": {
+        "resourceType": "Device",
+        "id": "1850baa1-0342-4c9b-9663-60bd85ce2b06",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/uv/crmi/StructureDefinition/crmi-softwaresystemdevice|1.0.0"
+          ]
+        },
+        "manufacturer": "safr-csv-fhir",
+        "deviceName": [
+          {
+            "name": "safr-csv-fhir",
+            "type": "manufacturer-name"
+          }
+        ],
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/software-system-type-codes",
+              "code": "tooling"
+            }
+          ]
+        },
+        "version": [
+          {
+            "value": "1.0.0"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:3da8f071-1d8f-4cd2-a479-6577d30e1f5f",
+      "resource": {
+        "resourceType": "MeasureReport",
+        "id": "3da8f071-1d8f-4cd2-a479-6577d30e1f5f",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/indv-measurereport-deqm"
+          ]
+        },
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-measureScoring",
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/measure-scoring",
+                  "code": "continuous-variable",
+                  "display": "Continuous Variable"
+                }
+              ]
+            }
+          },
+          {
+            "url": "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-dataLocation",
+            "valueReference": {
+              "reference": "urn:uuid:bd55c194-5a3f-42fc-a29e-e267a58af372",
+              "display": "Your Hospital Main Campus"
+            }
+          }
+        ],
+        "status": "complete",
+        "type": "individual",
+        "measure": "http://hl7.org/fhir/us/safr/Measure/BedCapacityMeasure|1.0.0-ballot",
+        "subject": {
+          "reference": "urn:uuid:bd55c194-5a3f-42fc-a29e-e267a58af372",
+          "display": "Your Hospital Main Campus"
+        },
+        "date": "2026-02-14T01:05:26+00:00",
+        "reporter": {
+          "reference": "urn:uuid:d18f3b2d-569a-4d67-afd5-1cacbf011815",
+          "display": "Your Hospital Name"
+        },
+        "period": {
+          "start": "2025-10-21T00:00:00+00:00",
+          "end": "2025-10-21T23:59:59+00:00"
+        },
+        "improvementNotation": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/measure-improvement-notation",
+              "code": "increase",
+              "display": "Increased score indicates improvement"
+            }
+          ]
+        },
+        "group": [
+          {
+            "id": "AdultICUOccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "AdultICUOccupied",
+                  "display": "Adult ICU Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "AdultICUOccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 4
+              }
+            ]
+          },
+          {
+            "id": "AdultICUUnoccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "AdultICUUnoccupied",
+                  "display": "Adult ICU Unoccupied"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "AdultICUUnoccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 0
+              }
+            ]
+          },
+          {
+            "id": "PedsICUOccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "PedsICUOccupied",
+                  "display": "Peds ICU Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "PedsICUOccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 3
+              }
+            ]
+          },
+          {
+            "id": "PedsICUUnoccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "PedsICUUnoccupied",
+                  "display": "Peds ICU Unoccupied"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "PedsICUUnoccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 1
+              }
+            ]
+          },
+          {
+            "id": "AdultNonICUOccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "AdultNonICUOccupied",
+                  "display": "Adult Non-ICU Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "AdultNonICUOccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 50
+              }
+            ]
+          },
+          {
+            "id": "AdultNonICUUnoccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "AdultNonICUUnoccupied",
+                  "display": "Adult Non-ICU Unoccupied"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "AdultNonICUUnoccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 0
+              }
+            ]
+          },
+          {
+            "id": "PedsNonICUOccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "PedsNonICUOccupied",
+                  "display": "Peds Non-ICU Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "PedsNonICUOccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 7
+              }
+            ]
+          },
+          {
+            "id": "PedsNonICUUnoccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "PedsNonICUUnoccupied",
+                  "display": "Peds Non-ICU Unoccupied"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "PedsNonICUUnoccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 1
+              }
+            ]
+          },
+          {
+            "id": "NICUOccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "NICUOccupied",
+                  "display": "Specialty NICU Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "NICUOccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 9
+              }
+            ]
+          },
+          {
+            "id": "NICUUnoccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "NICUUnoccupied",
+                  "display": "Specialty NICU Unoccupied"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "NICUUnoccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 1
+              }
+            ]
+          },
+          {
+            "id": "NurseryOccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "NurseryOccupied",
+                  "display": "Specialty Nursery Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "NurseryOccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 11
+              }
+            ]
+          },
+          {
+            "id": "NurseryUnoccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "NurseryUnoccupied",
+                  "display": "Specialty Nursery Unoccupied"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "NurseryUnoccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 1
+              }
+            ]
+          },
+          {
+            "id": "SurgeActiveTotalOccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "SurgeActiveTotalOccupied",
+                  "display": "Surge Total Active Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "SurgeActiveTotalOccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 13
+              }
+            ]
+          },
+          {
+            "id": "SurgeActiveTotalUnoccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "SurgeActiveTotalUnoccupied",
+                  "display": "Surge Total Active Unoccupied"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "SurgeActiveTotalUnoccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 1
+              }
+            ]
+          },
+          {
+            "id": "AdultEDCensus-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "AdultEDCensus",
+                  "display": "Adult ED Total Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "AdultEDCensus-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 50
+              }
+            ]
+          },
+          {
+            "id": "PedsEDCensus-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "PedsEDCensus",
+                  "display": "Peds ED Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "PedsEDCensus-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 25
+              }
+            ]
+          },
+          {
+            "id": "TotalEDCensus-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "TotalEDCensus",
+                  "display": "Total ED Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "TotalEDCensus-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 75
+              }
+            ]
+          },
+          {
+            "id": "AllBedsOccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "AllBedsOccupied",
+                  "display": "All Beds Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "AllBedsOccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 112
+              }
+            ]
+          },
+          {
+            "id": "AllBedsUnoccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "AllBedsUnoccupied",
+                  "display": "All Beds Unoccupied"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "AllBedsUnoccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 6
+              }
+            ]
+          },
+          {
+            "id": "AdultTotalOccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "AdultTotalOccupied",
+                  "display": "Adult Total Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "AdultTotalOccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 54
+              }
+            ]
+          },
+          {
+            "id": "AdultTotalUnoccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "AdultTotalUnoccupied",
+                  "display": "Adult Total Unoccupied"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "AdultTotalUnoccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 0
+              }
+            ]
+          },
+          {
+            "id": "PedsTotalOccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "PedsTotalOccupied",
+                  "display": "Peds Total Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "PedsTotalOccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 10
+              }
+            ]
+          },
+          {
+            "id": "PedsTotalUnoccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "PedsTotalUnoccupied",
+                  "display": "Peds Total Unoccupied"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "PedsTotalUnoccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 2
+              }
+            ]
+          },
+          {
+            "id": "SpecialtyTotalOccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "SpecialtyTotalOccupied",
+                  "display": "Specialty Total Census"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "SpecialtyTotalOccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 20
+              }
+            ]
+          },
+          {
+            "id": "SpecialtyTotalUnoccupied-bed-capacity-group",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes",
+                  "code": "SpecialtyTotalUnoccupied",
+                  "display": "Specialty Total Unoccupied"
+                }
+              ]
+            },
+            "population": [
+              {
+                "id": "SpecialtyTotalUnoccupied-initial-population",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                      "code": "initial-population",
+                      "display": "Initial Population"
+                    }
+                  ]
+                },
+                "count": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:bd55c194-5a3f-42fc-a29e-e267a58af372",
+      "resource": {
+        "resourceType": "Location",
+        "id": "bd55c194-5a3f-42fc-a29e-e267a58af372",
+        "meta": {
+          "profile": [
+            "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-location"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "http://example.org/fhir/location-identifier",
+            "value": "FACILITY-ID"
+          }
+        ],
+        "status": "active",
+        "name": "Your Hospital Main Campus",
+        "description": "Main hospital campus",
+        "mode": "instance",
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                "code": "HOSP",
+                "display": "Hospital"
+              }
+            ]
+          }
+        ],
+        "address": {
+          "line": [
+            "123 Main Street"
+          ],
+          "city": "City",
+          "state": "WA",
+          "postalCode": "98112",
+          "country": "USA"
+        },
+        "physicalType": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/location-physical-type",
+              "version": "2.0.1",
+              "code": "bu",
+              "display": "Building"
+            }
+          ]
+        },
+        "managingOrganization": {
+          "reference": "urn:uuid:d18f3b2d-569a-4d67-afd5-1cacbf011815"
+        }
+      }
+    }
+  ]
+}
