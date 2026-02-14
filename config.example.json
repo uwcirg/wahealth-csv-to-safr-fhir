@@ -1,0 +1,24 @@
+{
+  "organization": {
+    "nhsn_org_id": "YOUR_NHSN_ORG_ID",
+    "name": "Your Hospital Name",
+    "phone": "+1-555-000-0000",
+    "address": {
+      "line": ["123 Main Street"],
+      "city": "City",
+      "state": "WA",
+      "postalCode": "98112",
+      "country": "USA"
+    }
+  },
+  "location": {
+    "identifier_system": "http://example.org/fhir/location-identifier",
+    "identifier_value": "FACILITY-ID",
+    "name": "Your Hospital Main Campus",
+    "description": "Main hospital campus"
+  },
+  "software": {
+    "name": "safr-csv-fhir",
+    "version": "1.0.0"
+  }
+}
