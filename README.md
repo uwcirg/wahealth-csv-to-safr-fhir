@@ -12,3 +12,5 @@ Outputs one JSON Bundle per CSV row to the output directory, named:
 ```{facility_name}.{reporting_date}.BedCapacity.json```
 
 Requires Python 3 (stdlib only — no pip install needed).
+
+Note: the sample here includes HRD counts, but these are not processed by this code.
