@@ -706,13 +706,25 @@ def main():
         bundle, reporting_date = build_bundle(row, config)
         facility_name = sanitize_filename(row.get("facility_name", f"facility_{i}"))
         date_str = reporting_date.strftime("%Y-%m-%d")
-        filename = f"{facility_name}.{date_str}.BedCapacity.json"
-        filepath = os.path.join(args.output_dir, filename)
 
-        with open(filepath, "w") as f:
+        # Create date subdirectory
+        date_dir = os.path.join(args.output_dir, date_str)
+        os.makedirs(date_dir, exist_ok=True)
+
+        # Write bundle
+        bundle_filepath = os.path.join(date_dir, f"{facility_name}.{date_str}.BedCapacity.json")
+        with open(bundle_filepath, "w") as f:
             json.dump(bundle, f, indent=2)
+        print(f"  Written: {bundle_filepath}")
 
-        print(f"  Written: {filepath}")
+        # Write individual resources for debugging
+        for entry in bundle["entry"]:
+            resource = entry["resource"]
+            res_type = resource["resourceType"]
+            res_filepath = os.path.join(date_dir, f"{res_type}.json")
+            with open(res_filepath, "w") as f:
+                json.dump(resource, f, indent=2)
+            print(f"  Written: {res_filepath}")
 
         # Optionally persist to FHIR server
         if fhir_server_url:
