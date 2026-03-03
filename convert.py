@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 BUNDLE_PROFILE = "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-measurereport-bundle"
 MEASUREREPORT_PROFILE = "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/indv-measurereport-deqm"
 ORG_PROFILE = "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-submitting-organization"
+QICORE_ORG_PROFILE = "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-organization"
 LOCATION_PROFILE = "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-location"
 DEVICE_PROFILE = "http://hl7.org/fhir/uv/crmi/StructureDefinition/crmi-softwaresystemdevice|1.0.0"
 
@@ -211,7 +212,7 @@ def build_organization_resource(config):
     return {
         "resourceType": "Organization",
         "meta": {
-            "profile": [ORG_PROFILE]
+            "profile": [ORG_PROFILE, QICORE_ORG_PROFILE]
         },
         "identifier": [{
             "system": NHSN_SYSTEM,
@@ -770,7 +771,7 @@ def main():
                 logger.error("FHIR server unreachable: %s", e)
                 fhir_server_url = None  # Disable for remaining rows
 
-    logger.info("Converted %d row(s) to FHIR Bundles in %s/", len(rows), args.output_dir)
+    logger.info("Converted %d row(s) to FHIR Bundles in %s", len(rows), args.output_dir.rstrip("/"))
 
 
 if __name__ == "__main__":
