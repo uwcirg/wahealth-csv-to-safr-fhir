@@ -19,6 +19,14 @@
   },
   "software": {
     "name": "safr-csv-fhir",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "identifier_system": "http://example.org/fhir/device-identifier",
+    "identifier_value": "safr-csv-fhir"
+  },
+  "server": {
+    "base_url": "",
+    "token_endpoint": "",
+    "client_id": "",
+    "client_secret": ""
   }
 }
