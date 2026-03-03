@@ -20,6 +20,7 @@ import argparse
 import copy
 import csv
 import json
+import logging
 import os
 import sys
 import uuid
@@ -27,6 +28,8 @@ import urllib.request
 import urllib.error
 import urllib.parse
 from datetime import datetime, timezone, timedelta
+
+logger = logging.getLogger(__name__)
 
 
 # --- Constants ---
@@ -82,7 +85,7 @@ def load_config(path):
         config = json.load(f)
     for section in ("organization", "location", "software"):
         if section not in config:
-            print(f"Error: config.json missing '{section}' section.", file=sys.stderr)
+            logger.error("config.json missing '%s' section.", section)
             sys.exit(1)
     return config
 
@@ -93,7 +96,7 @@ def parse_csv(path):
         reader = csv.DictReader(f)
         rows = list(reader)
     if not rows:
-        print("Error: CSV file contains no data rows.", file=sys.stderr)
+        logger.error("CSV file contains no data rows.")
         sys.exit(1)
     return rows
 
@@ -481,12 +484,13 @@ def fetch_access_token(token_endpoint, client_id, client_secret):
     try:
         with urllib.request.urlopen(req) as resp:
             token_response = json.loads(resp.read().decode("utf-8"))
+            logger.info("Obtained access token from %s", token_endpoint)
             return token_response["access_token"]
     except urllib.error.HTTPError as e:
-        print(f"Error: failed to obtain access token from {token_endpoint}: HTTP {e.code}", file=sys.stderr)
+        logger.error("Failed to obtain access token: HTTP %s", e.code)
         raise
     except KeyError:
-        print("Error: token endpoint response missing 'access_token' field.", file=sys.stderr)
+        logger.error("Token response missing 'access_token'")
         raise
 
 
@@ -505,22 +509,23 @@ def fhir_request(url, method="GET", body=None, auth_token=None):
     try:
         with urllib.request.urlopen(req) as resp:
             resp_body = resp.read().decode("utf-8")
+            logger.info("FHIR %s %s — OK", method, url)
             if resp_body:
                 return json.loads(resp_body)
             return None
     except urllib.error.HTTPError as e:
         resp_body = e.read().decode("utf-8", errors="replace")
-        print(f"  FHIR server error: HTTP {e.code} {method} {url}", file=sys.stderr)
+        logger.error("FHIR %s %s — HTTP %s", method, url, e.code)
         if resp_body:
             try:
                 outcome = json.loads(resp_body)
                 if outcome.get("resourceType") == "OperationOutcome":
                     for issue in outcome.get("issue", []):
-                        print(f"    {issue.get('severity', '?')}: {issue.get('diagnostics', issue.get('details', {}).get('text', ''))}", file=sys.stderr)
+                        logger.error("  %s: %s", issue.get('severity', '?'), issue.get('diagnostics', issue.get('details', {}).get('text', '')))
                 else:
-                    print(f"    {resp_body[:500]}", file=sys.stderr)
+                    logger.error("  %s", resp_body[:500])
             except json.JSONDecodeError:
-                print(f"    {resp_body[:500]}", file=sys.stderr)
+                logger.error("  %s", resp_body[:500])
         raise
 
 
@@ -680,6 +685,21 @@ def main():
                         help="FHIR server base URL to persist resources to (e.g. http://localhost:8080/fhir)")
     args = parser.parse_args()
 
+    # --- Set up logging ---
+    os.makedirs("log", exist_ok=True)
+    log_filename = datetime.now().strftime("convert_%Y%m%d_%H%M%S.log")
+    log_format = "%(asctime)s %(levelname)s %(message)s"
+
+    file_handler = logging.FileHandler(os.path.join("log", log_filename))
+    file_handler.setFormatter(logging.Formatter(log_format))
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(logging.Formatter(log_format))
+
+    logger.setLevel(logging.INFO)
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
     config = load_config(args.config)
     rows = parse_csv(args.csv_file)
 
@@ -715,7 +735,7 @@ def main():
         bundle_filepath = os.path.join(date_dir, f"{facility_name}.{date_str}.BedCapacity.json")
         with open(bundle_filepath, "w") as f:
             json.dump(bundle, f, indent=2)
-        print(f"  Written: {bundle_filepath}")
+        logger.info("Generated %s", bundle_filepath)
 
         # Write individual resources for debugging
         for entry in bundle["entry"]:
@@ -724,7 +744,7 @@ def main():
             res_filepath = os.path.join(date_dir, f"{res_type}.json")
             with open(res_filepath, "w") as f:
                 json.dump(resource, f, indent=2)
-            print(f"  Written: {res_filepath}")
+            logger.info("Generated %s", res_filepath)
 
         # Optionally persist to FHIR server
         if fhir_server_url:
@@ -743,14 +763,14 @@ def main():
                 facility_guid = row.get("facility_guid", "")
                 bundle_ref = upsert_bundle(bundle, facility_guid, reporting_date,
                                            fhir_server_url, auth_token)
-                print(f"  Persisted: {mr_ref} + {bundle_ref}")
+                logger.info("Persisted: %s + %s", mr_ref, bundle_ref)
             except urllib.error.HTTPError:
-                print(f"  Warning: skipping server persistence for this row due to error above.", file=sys.stderr)
+                logger.error("Skipping server persistence for row due to error above")
             except urllib.error.URLError as e:
-                print(f"  Warning: FHIR server unreachable ({e}), skipping server persistence.", file=sys.stderr)
+                logger.error("FHIR server unreachable: %s", e)
                 fhir_server_url = None  # Disable for remaining rows
 
-    print(f"\nConverted {len(rows)} row(s) to FHIR Bundles in {args.output_dir}/")
+    logger.info("Converted %d row(s) to FHIR Bundles in %s/", len(rows), args.output_dir)
 
 
 if __name__ == "__main__":
