@@ -57,7 +57,7 @@ jobs:
           SAFR_IG_VERSION=$(grep -oP 'SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py)
           echo "SAFR_IG_VERSION=$SAFR_IG_VERSION" >> "$GITHUB_ENV"
       - name: Log IG version
-        run: echo "Validating against SAFR IG version:$SAFR_IG_VERSION"
+        run: echo "Validating against SAFR IG version: $SAFR_IG_VERSION"
       - name: Validate FHIR Bundles
         run: |
           # Known upstream errors are documented in known-validation-issues.md.
@@ -83,14 +83,24 @@ jobs:
 
             if [ -n "$REAL_ERRORS" ]; then
               echo ""
-              echo "::error::FHIR validation found errors beyond known upstream issues (see known-validation-issues.md):"
+              echo "::error::FHIR validation (SAFR IG $SAFR_IG_VERSION) found errors beyond known upstream issues (see known-validation-issues.md):"
               echo "$REAL_ERRORS"
               exit 1
             else
               echo ""
-              echo "::warning::FHIR validation reported only known upstream DEQM v5.0.0 errors (see known-validation-issues.md). These affect the IG's own published examples and are not caused by this project."
+              echo "::warning::FHIR validation (SAFR IG $SAFR_IG_VERSION) reported only known upstream DEQM v5.0.0 errors (see known-validation-issues.md). These affect the IG's own published examples and are not caused by this project."
             fi
           fi
+
+  unit-test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: python -m unittest discover -s tests -p "test_*.py"
 
   secret-scan:
     name: Secret Scanning
