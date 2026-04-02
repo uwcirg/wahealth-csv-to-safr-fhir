@@ -27,7 +27,7 @@ import uuid
 import urllib.request
 import urllib.error
 import urllib.parse
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -708,6 +708,9 @@ def main():
 
     # Determine FHIR server URL: CLI flag overrides config
     fhir_server_url = args.fhir_server or config.get("server", {}).get("base_url") or None
+    if fhir_server_url and not fhir_server_url.startswith(("http://", "https://")):
+        logger.warning("Ignoring non-URL server base_url: %s", fhir_server_url)
+        fhir_server_url = None
     if fhir_server_url:
         fhir_server_url = fhir_server_url.rstrip("/")
     auth_token = None

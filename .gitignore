@@ -1,0 +1,12 @@
+# Secrets and config
+config.json
+*.secret*
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Generated output
+output/
+log/
