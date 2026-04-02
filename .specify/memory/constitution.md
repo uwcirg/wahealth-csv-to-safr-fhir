@@ -1,13 +1,13 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.1 → 1.1.0
+- Version change: 1.1.0 → 1.2.0
 - Modified principles:
-  - FHIR Profile Conformance — expanded with IG version tracking
-    requirements (code MUST declare target IG version, accommodate
-    IG version changes via configuration or constants)
-  - Validation-Driven Testing — expanded to require testing against
-    a specific IG version, recording which version was used in CI
-    output and test artifacts
+  - Validation-Driven Testing — added "LLM Development Validation"
+    subsection requiring LLM agents performing dev work to run the
+    same FHIR validation pipeline as GitHub CI (convert test fixtures,
+    extract IG version, run validator_cli.jar) before considering
+    work complete. Elevated local validation from SHOULD to MUST for
+    LLM agents.
 - Added sections: None
 - Removed sections: None
 - Templates requiring updates:
@@ -109,7 +109,8 @@ regressions from IG version changes are detectable.
 - CI MUST run the converter against all test inputs, then validate
   every output Bundle with the HL7 FHIR Validator. Zero errors = pass.
 - Developers SHOULD run FHIR validation locally during development,
-  not only in CI.
+  not only in CI. LLM agents MUST do so (see LLM Development
+  Validation below).
 - When adding new functionality (e.g., HRD surveillance measures), add
   corresponding test CSV rows that exercise the new columns.
 - Supplement conformance tests with targeted unit tests for computation
@@ -128,6 +129,21 @@ regressions from IG version changes are detectable.
   updated, a full validation pass against the new version MUST be
   performed and its results reviewed before the version change is
   merged.
+- **LLM Development Validation:** When an LLM agent (Claude Code,
+  Copilot, etc.) performs development work that could affect FHIR
+  output, it MUST run the same validation pipeline as GitHub CI
+  before considering the work complete. Specifically:
+  1. Run the converter against all test fixtures in `input/`
+     (excluding `*column-labels-only*` files):
+     `python3 convert.py "$csv" --config config.example.json --output-dir output`
+  2. Extract the `SAFR_IG_VERSION` constant from `convert.py`.
+  3. Run the HL7 FHIR Validator against all generated Bundles:
+     `java -jar validator_cli.jar output/**/*.json -version 4.0.1 -ig hl7.fhir.us.safr#$SAFR_IG_VERSION`
+  4. Zero errors required; warnings are acceptable.
+  The LLM MUST NOT skip validation to save time or defer it to CI.
+  If `validator_cli.jar` or Java is not available locally, the LLM
+  MUST inform the user and request that the environment be set up
+  before proceeding, rather than silently skipping validation.
 
 ### Data Integrity and Defensive Transformation
 
@@ -295,4 +311,4 @@ Split only when complexity demands it.
   exception and the reasoning in the relevant spec or PR — do not
   silently deviate.
 
-**Version**: 1.1.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-04-02
+**Version**: 1.2.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-04-02
