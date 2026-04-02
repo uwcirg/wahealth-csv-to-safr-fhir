@@ -39,8 +39,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T001 [US1] Update SAFR_IG_VERSION constant from "1.0.0-ballot" to "1.0.0" in convert.py (line 38)
-- [ ] T002 [US1] Verify all derived constants (BUNDLE_PROFILE, ORG_PROFILE, MEASURE_URL) resolve correctly by running the converter against test fixtures and inspecting output in output/
+- [X] T001 [US1] Update SAFR_IG_VERSION constant from "1.0.0-ballot" to "1.0.0" in convert.py (line 38)
+- [X] T002 [US1] Verify all derived constants (BUNDLE_PROFILE, ORG_PROFILE, MEASURE_URL) resolve correctly by running the converter against test fixtures and inspecting output in output/
 
 **Checkpoint**: At this point, all generated FHIR Bundles reference IG version `1.0.0`. User Story 1 is complete and independently verifiable.
 
@@ -54,8 +54,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T003 [US2] Run the full LLM validation pipeline per CLAUDE.md: convert all test fixtures, extract IG version, validate with validator_cli.jar against hl7.fhir.us.safr#1.0.0, confirm zero errors
-- [ ] T004 [US2] If validation reveals structural differences between ballot and STU 1 profiles, fix any conformance issues in convert.py and re-validate
+- [X] T003 [US2] Run the full LLM validation pipeline per CLAUDE.md: convert all test fixtures, extract IG version, validate with validator_cli.jar against hl7.fhir.us.safr#1.0.0, confirm zero errors
+- [X] T004 [US2] If validation reveals structural differences between ballot and STU 1 profiles, fix any conformance issues in convert.py and re-validate
 
 **Checkpoint**: FHIR validation passes with zero errors against the STU 1 IG. Feature is complete.
 
@@ -65,7 +65,7 @@
 
 **Purpose**: Final verification and cleanup.
 
-- [ ] T005 Run quickstart.md validation steps to confirm end-to-end workflow
+- [X] T005 Run quickstart.md validation steps to confirm end-to-end workflow
 
 ---
 
