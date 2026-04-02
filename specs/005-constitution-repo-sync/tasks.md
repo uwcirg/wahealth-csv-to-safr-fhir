@@ -19,8 +19,8 @@
 
 **Purpose**: Create test directory structure and verify import prerequisites
 
-- [ ] T001 Create `tests/` directory with `tests/__init__.py` (empty) to establish the test package
-- [ ] T002 Verify `convert.py` is importable by running `python -c "import convert"` from repo root
+- [X] T001 Create `tests/` directory with `tests/__init__.py` (empty) to establish the test package
+- [X] T002 Verify `convert.py` is importable by running `python -c "import convert"` from repo root
 
 ---
 
@@ -40,12 +40,12 @@
 
 ### Implementation for User Story 1
 
-- [ ] T003 [US1] Create test file `tests/test_compute.py` with unittest scaffolding: import `unittest`, add `sys.path` setup to import from repo root `convert.py`, create `TestSafeInt` class
-- [ ] T004 [US1] Implement `TestSafeInt` tests in `tests/test_compute.py`: verify returns 0 for empty string, None, whitespace; returns correct int for valid numeric strings; verify behavior for non-numeric non-empty strings
-- [ ] T005 [US1] Implement `TestGetOccupiedAndUnoccupied` tests in `tests/test_compute.py`: verify normal occupied/unoccupied split, verify unoccupied clamped to 0 when occupied > capacity, verify zero capacity edge case
-- [ ] T006 [US1] Implement `TestParseReportingDate` tests in `tests/test_compute.py`: verify `MM/DD/YYYY` format returns correct `datetime.date`, verify edge cases (year boundaries, leap year dates)
-- [ ] T007 [US1] Implement `TestComputeGroups` tests in `tests/test_compute.py`: build a complete CSV row dict using known values, call `compute_groups()`, verify exactly 25 groups returned, verify aggregate sums (AllBeds, AdultTotal, PedsTotal, SpecialtyTotal) match manual calculations from raw input values
-- [ ] T008 [US1] Run full test suite via `python -m unittest discover -s tests -p "test_*.py"` and confirm all tests pass
+- [X] T003 [US1] Create test file `tests/test_compute.py` with unittest scaffolding: import `unittest`, add `sys.path` setup to import from repo root `convert.py`, create `TestSafeInt` class
+- [X] T004 [US1] Implement `TestSafeInt` tests in `tests/test_compute.py`: verify returns 0 for empty string, None, whitespace; returns correct int for valid numeric strings; verify behavior for non-numeric non-empty strings
+- [X] T005 [US1] Implement `TestGetOccupiedAndUnoccupied` tests in `tests/test_compute.py`: verify normal occupied/unoccupied split, verify unoccupied clamped to 0 when occupied > capacity, verify zero capacity edge case
+- [X] T006 [US1] Implement `TestParseReportingDate` tests in `tests/test_compute.py`: verify `MM/DD/YYYY` format returns correct `datetime.date`, verify edge cases (year boundaries, leap year dates)
+- [X] T007 [US1] Implement `TestComputeGroups` tests in `tests/test_compute.py`: build a complete CSV row dict using known values, call `compute_groups()`, verify exactly 25 groups returned, verify aggregate sums (AllBeds, AdultTotal, PedsTotal, SpecialtyTotal) match manual calculations from raw input values
+- [X] T008 [US1] Run full test suite via `python -m unittest discover -s tests -p "test_*.py"` and confirm all tests pass
 
 **Checkpoint**: Unit tests for all four core computation functions pass. User Story 1 complete.
 
@@ -59,8 +59,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Update Step 4 in `CLAUDE.md` to add explicit filtering guidance: list the two known upstream error patterns (matching CI's `grep -v` in `.github/workflows/ci.yml`), reference `known-validation-issues.md` as the source of truth, and instruct LLM agents to treat validation as passing when only known upstream errors are present
-- [ ] T010 [US2] Verify consistency: confirm the error patterns in updated CLAUDE.md match both the CI `grep -v` patterns in `.github/workflows/ci.yml` and the entries in `known-validation-issues.md`
+- [X] T009 [US2] Update Step 4 in `CLAUDE.md` to add explicit filtering guidance: list the two known upstream error patterns (matching CI's `grep -v` in `.github/workflows/ci.yml`), reference `known-validation-issues.md` as the source of truth, and instruct LLM agents to treat validation as passing when only known upstream errors are present
+- [X] T010 [US2] Verify consistency: confirm the error patterns in updated CLAUDE.md match both the CI `grep -v` patterns in `.github/workflows/ci.yml` and the entries in `known-validation-issues.md`
 
 **Checkpoint**: CLAUDE.md provides LLM agents with the same known-issue filtering as CI. User Story 2 complete.
 
@@ -74,9 +74,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T011 [P] [US3] Fix IG version log formatting in `.github/workflows/ci.yml`: add space after colon in `echo "Validating against SAFR IG version:$SAFR_IG_VERSION"` → `echo "Validating against SAFR IG version: $SAFR_IG_VERSION"`
-- [ ] T012 [P] [US3] Add IG version to post-validation summary in `.github/workflows/ci.yml`: include `$SAFR_IG_VERSION` in both the `::error::` and `::warning::` output messages
-- [ ] T013 [US3] Add `unit-test` job to `.github/workflows/ci.yml`: new job using `actions/setup-python@v5` with `python-version: "3.x"`, running `python -m unittest discover -s tests -p "test_*.py"`
+- [X] T011 [P] [US3] Fix IG version log formatting in `.github/workflows/ci.yml`: add space after colon in `echo "Validating against SAFR IG version:$SAFR_IG_VERSION"` → `echo "Validating against SAFR IG version: $SAFR_IG_VERSION"`
+- [X] T012 [P] [US3] Add IG version to post-validation summary in `.github/workflows/ci.yml`: include `$SAFR_IG_VERSION` in both the `::error::` and `::warning::` output messages
+- [X] T013 [US3] Add `unit-test` job to `.github/workflows/ci.yml`: new job using `actions/setup-python@v5` with `python-version: "3.x"`, running `python -m unittest discover -s tests -p "test_*.py"`
 
 **Checkpoint**: CI logs IG version prominently and runs unit tests. User Story 3 complete.
 
@@ -86,8 +86,8 @@
 
 **Purpose**: Final validation across all changes
 
-- [ ] T014 Run the full LLM Validation Pipeline (Steps 1–4 from CLAUDE.md) to confirm no regressions
-- [ ] T015 Run quickstart.md validation: execute unit tests, verify CLAUDE.md changes, confirm CI changes match spec
+- [X] T014 Run the full LLM Validation Pipeline (Steps 1–4 from CLAUDE.md) to confirm no regressions
+- [X] T015 Run quickstart.md validation: execute unit tests, verify CLAUDE.md changes, confirm CI changes match spec
 
 ---
 

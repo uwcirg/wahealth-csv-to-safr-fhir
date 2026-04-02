@@ -73,8 +73,12 @@ java -jar validator_cli.jar output/**/*.json \
 
 The validation **MUST** produce zero errors **not attributable to known upstream issues**. Warnings are acceptable.
 
-- Errors matching patterns documented in `known-validation-issues.md` (e.g., DEQM v5.0.0 cross-version extension resolution, cascading Bundle slice failures) are upstream issues — note them but do **not** treat them as blockers.
-- Any error **not** matching a documented known issue is a blocker. Fix the issue and re-run the full pipeline from Step 1.
+**Known upstream error patterns to filter** (see `known-validation-issues.md` for full root-cause analysis):
+
+1. `extension-MeasureReport.supplementalData` — DEQM v5.0.0 references an unresolvable R5 cross-version extension, causing slicing evaluation to fail on MeasureReport extensions.
+2. `Slice 'Bundle.entry:measurereport': a matching slice is required` — Cascading failure from issue 1; the Bundle slice discriminator cannot validate the MeasureReport profile.
+
+These are the same patterns filtered by CI's `grep -v` in `.github/workflows/ci.yml`. If the validator output contains **only** errors matching these two patterns, validation **passes**. Any error **not** matching these patterns is a project-introduced blocker — fix the issue and re-run the full pipeline from Step 1.
 
 ### Behavioral Requirements
 
