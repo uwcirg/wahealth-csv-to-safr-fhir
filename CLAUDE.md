@@ -6,6 +6,7 @@ Auto-generated from all feature plans. Last updated: 2026-04-02
 - Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning) (002-ig-version-tracking)
 - Filesystem — CSV input, JSON output, JSON config (002-ig-version-tracking)
 - Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff`, `validator_cli.jar`, `gitleaks` (003-constitution-repo-update)
+- Python 3 (stdlib only) + None at runtime (004-safr-ig-stu1-update)
 
 - Python 3 (stdlib only for runtime; dev tools use pip) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning) (001-constitution-alignment)
 
@@ -25,10 +26,10 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3 (stdlib only for runtime; dev tools use pip): Follow standard conventions
 
 ## Recent Changes
+- 004-safr-ig-stu1-update: Added Python 3 (stdlib only) + None at runtime
 - 003-constitution-repo-update: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff`, `validator_cli.jar`, `gitleaks`
 - 002-ig-version-tracking: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning)
 
-- 001-constitution-alignment: Added Python 3 (stdlib only for runtime; dev tools use pip) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning)
 
 <!-- MANUAL ADDITIONS START -->
 
