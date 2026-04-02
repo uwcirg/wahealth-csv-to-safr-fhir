@@ -22,6 +22,7 @@ import csv
 import json
 import logging
 import os
+import re
 import sys
 import uuid
 import urllib.request
@@ -34,9 +35,16 @@ logger = logging.getLogger(__name__)
 
 # --- Constants ---
 
-BUNDLE_PROFILE = "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-measurereport-bundle"
+SAFR_IG_VERSION = "1.0.0-ballot"
+
+if not re.match(r"^\d+\.\d+\.\d+(-[a-zA-Z0-9]+)?$", SAFR_IG_VERSION):
+    print(f"ERROR: SAFR_IG_VERSION is invalid: '{SAFR_IG_VERSION}'. "
+          "Expected semver format (e.g., '1.0.0' or '1.0.0-ballot').", file=sys.stderr)
+    sys.exit(1)
+
+BUNDLE_PROFILE = f"http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-measurereport-bundle|{SAFR_IG_VERSION}"
 MEASUREREPORT_PROFILE = "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/indv-measurereport-deqm"
-ORG_PROFILE = "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-submitting-organization"
+ORG_PROFILE = f"http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-submitting-organization|{SAFR_IG_VERSION}"
 QICORE_ORG_PROFILE = "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-organization"
 LOCATION_PROFILE = "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-location"
 DEVICE_PROFILE = "http://hl7.org/fhir/uv/crmi/StructureDefinition/crmi-softwaresystemdevice|1.0.0"
@@ -51,7 +59,7 @@ PHYSICAL_TYPE_SYSTEM = "http://terminology.hl7.org/CodeSystem/location-physical-
 SOFTWARE_TYPE_SYSTEM = "http://terminology.hl7.org/CodeSystem/software-system-type-codes"
 NHSN_SYSTEM = "https://www.cdc.gov/nhsn/OrgID"
 
-MEASURE_URL = "http://hl7.org/fhir/us/safr/Measure/BedCapacityMeasure|1.0.0-ballot"
+MEASURE_URL = f"http://hl7.org/fhir/us/safr/Measure/BedCapacityMeasure|{SAFR_IG_VERSION}"
 
 MEASURE_SCORING_EXT = "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-measureScoring"
 DATA_LOCATION_EXT = "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-dataLocation"
