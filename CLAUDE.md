@@ -31,4 +31,50 @@ Python 3 (stdlib only for runtime; dev tools use pip): Follow standard conventio
 - 001-constitution-alignment: Added Python 3 (stdlib only for runtime; dev tools use pip) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning)
 
 <!-- MANUAL ADDITIONS START -->
+
+## LLM Validation Pipeline
+
+LLM agents **MUST** run the following four-step FHIR validation pipeline before completing any development work that touches `convert.py`, configuration, or FHIR output. This matches the CI pipeline in `.github/workflows/ci.yml` exactly.
+
+### Step 1: Convert test fixtures
+
+Run the converter against all test CSV fixtures, excluding column-labels-only files (which contain headers but no data rows):
+
+```bash
+for csv in input/*.BedCapacity.csv; do
+  case "$csv" in
+    *column-labels-only*) continue ;;
+  esac
+  echo "Converting: $csv"
+  python3 convert.py "$csv" --config config.example.json --output-dir output
+done
+```
+
+### Step 2: Extract SAFR IG version
+
+Extract the IG version from `convert.py` so the validator uses the correct profile version:
+
+```bash
+SAFR_IG_VERSION=$(python3 -c "import re; m=re.search(r\"SAFR_IG_VERSION\s*=\s*['\"]([^'\"]+)['\"]\", open('convert.py').read()); print(m.group(1))")
+```
+
+### Step 3: Validate FHIR Bundles
+
+Run the FHIR validator against all generated output:
+
+```bash
+java -jar validator_cli.jar output/**/*.json \
+  -version 4.0.1 \
+  -ig hl7.fhir.us.safr#$SAFR_IG_VERSION
+```
+
+### Step 4: Zero errors required
+
+The validation **MUST** produce zero errors. Warnings are acceptable. If errors occur, fix the issue and re-run the full pipeline from Step 1.
+
+### Behavioral Requirements
+
+- **Do NOT skip validation** to save time or defer to CI. The validation pipeline is mandatory before completing work.
+- If `validator_cli.jar` or Java is not available in the local environment, **inform the user immediately** and explain that FHIR validation cannot be performed. Do not silently skip validation.
+
 <!-- MANUAL ADDITIONS END -->

@@ -24,8 +24,8 @@
 
 **Purpose**: Verify the current state of CLAUDE.md and CI workflow before making changes
 
-- [ ] T001 Confirm `CLAUDE.md` contains `<!-- MANUAL ADDITIONS START -->` and `<!-- MANUAL ADDITIONS END -->` markers at CLAUDE.md
-- [ ] T002 [P] Confirm `.github/workflows/ci.yml` contains the four validation steps (convert, extract IG version, validate, zero-errors) at .github/workflows/ci.yml
+- [X] T001 Confirm `CLAUDE.md` contains `<!-- MANUAL ADDITIONS START -->` and `<!-- MANUAL ADDITIONS END -->` markers at CLAUDE.md
+- [X] T002 [P] Confirm `.github/workflows/ci.yml` contains the four validation steps (convert, extract IG version, validate, zero-errors) at .github/workflows/ci.yml
 
 ---
 
@@ -45,13 +45,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T003 [US1] Add "LLM Validation Pipeline" section header between manual additions markers in CLAUDE.md
-- [ ] T004 [US1] Add Step 1 — convert test fixtures command (with `*column-labels-only*` exclusion pattern) matching CI workflow lines 47–53 in CLAUDE.md
-- [ ] T005 [US1] Add Step 2 — extract `SAFR_IG_VERSION` command matching CI workflow line 57 in CLAUDE.md
-- [ ] T006 [US1] Add Step 3 — `validator_cli.jar` invocation command matching CI workflow lines 63–65 in CLAUDE.md
-- [ ] T007 [US1] Add Step 4 — zero-errors requirement with instruction to fix and re-validate if errors occur in CLAUDE.md
-- [ ] T008 [US1] Add instruction that LLM agents MUST NOT skip validation to save time or defer to CI in CLAUDE.md
-- [ ] T009 [US1] Add instruction that LLM agents must inform the user if `validator_cli.jar` or Java is unavailable in CLAUDE.md
+- [X] T003 [US1] Add "LLM Validation Pipeline" section header between manual additions markers in CLAUDE.md
+- [X] T004 [US1] Add Step 1 — convert test fixtures command (with `*column-labels-only*` exclusion pattern) matching CI workflow lines 47–53 in CLAUDE.md
+- [X] T005 [US1] Add Step 2 — extract `SAFR_IG_VERSION` command matching CI workflow line 57 in CLAUDE.md
+- [X] T006 [US1] Add Step 3 — `validator_cli.jar` invocation command matching CI workflow lines 63–65 in CLAUDE.md
+- [X] T007 [US1] Add Step 4 — zero-errors requirement with instruction to fix and re-validate if errors occur in CLAUDE.md
+- [X] T008 [US1] Add instruction that LLM agents MUST NOT skip validation to save time or defer to CI in CLAUDE.md
+- [X] T009 [US1] Add instruction that LLM agents must inform the user if `validator_cli.jar` or Java is unavailable in CLAUDE.md
 
 **Checkpoint**: CLAUDE.md now contains the complete LLM validation pipeline. An LLM agent reading CLAUDE.md can follow the steps end-to-end.
 
@@ -65,8 +65,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Review the validation pipeline section in CLAUDE.md for clarity and completeness — ensure commands are copy-pasteable and self-contained
-- [ ] T011 [US2] Verify all commands in CLAUDE.md are executable shell commands (not pseudocode) by dry-running each step mentally against the repo structure in CLAUDE.md
+- [X] T010 [US2] Review the validation pipeline section in CLAUDE.md for clarity and completeness — ensure commands are copy-pasteable and self-contained
+- [X] T011 [US2] Verify all commands in CLAUDE.md are executable shell commands (not pseudocode) by dry-running each step mentally against the repo structure in CLAUDE.md
 
 **Checkpoint**: A developer or LLM agent reading only CLAUDE.md can execute the full validation pipeline without additional context.
 
@@ -80,9 +80,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T012 [US3] Compare each command in the CLAUDE.md validation pipeline against .github/workflows/ci.yml and fix any discrepancies in CLAUDE.md
-- [ ] T013 [US3] Verify the exclusion pattern `*column-labels-only*` in CLAUDE.md matches the CI pattern in .github/workflows/ci.yml line 49
-- [ ] T014 [US3] Verify the IG version extraction method in CLAUDE.md matches CI workflow .github/workflows/ci.yml line 57
+- [X] T012 [US3] Compare each command in the CLAUDE.md validation pipeline against .github/workflows/ci.yml and fix any discrepancies in CLAUDE.md
+- [X] T013 [US3] Verify the exclusion pattern `*column-labels-only*` in CLAUDE.md matches the CI pattern in .github/workflows/ci.yml line 49
+- [X] T014 [US3] Verify the IG version extraction method in CLAUDE.md matches CI workflow .github/workflows/ci.yml line 57
 
 **Checkpoint**: All LLM validation pipeline steps in CLAUDE.md are functionally identical to CI.
 
@@ -92,8 +92,8 @@
 
 **Purpose**: Final validation across all stories
 
-- [ ] T015 Run quickstart.md verification commands (`grep` checks) to confirm CLAUDE.md contains all required content
-- [ ] T016 Run `ruff check convert.py` to confirm no linting regressions (no code changes expected, but validates clean state)
+- [X] T015 Run quickstart.md verification commands (`grep` checks) to confirm CLAUDE.md contains all required content
+- [X] T016 Run `ruff check convert.py` to confirm no linting regressions (no code changes expected, but validates clean state)
 
 ---
 
