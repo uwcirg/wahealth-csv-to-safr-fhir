@@ -54,7 +54,7 @@ jobs:
       - name: Extract SAFR IG version
         id: ig-version
         run: |
-          SAFR_IG_VERSION=$(python3 -c "import re; m=re.search(r\"SAFR_IG_VERSION\s*=\s*['\"]([^'\"]+)['\"]\", open('convert.py').read()); print(m.group(1))")
+          SAFR_IG_VERSION=$(grep -oP 'SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py)
           echo "SAFR_IG_VERSION=$SAFR_IG_VERSION" >> "$GITHUB_ENV"
       - name: Log IG version
         run: echo "Validating against SAFR IG version:$SAFR_IG_VERSION"

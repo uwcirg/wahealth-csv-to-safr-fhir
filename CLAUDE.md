@@ -56,7 +56,7 @@ done
 Extract the IG version from `convert.py` so the validator uses the correct profile version:
 
 ```bash
-SAFR_IG_VERSION=$(python3 -c "import re; m=re.search(r\"SAFR_IG_VERSION\s*=\s*['\"]([^'\"]+)['\"]\", open('convert.py').read()); print(m.group(1))")
+SAFR_IG_VERSION=$(grep -oP 'SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py)
 ```
 
 ### Step 3: Validate FHIR Bundles
