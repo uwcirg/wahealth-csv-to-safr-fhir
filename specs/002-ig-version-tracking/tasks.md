@@ -39,9 +39,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T001 [US1] Add `SAFR_IG_VERSION = "1.0.0-ballot"` constant near the top of convert.py (before existing profile URL constants, around line 36)
-- [ ] T002 [US1] Add startup validation for `SAFR_IG_VERSION` in convert.py — regex check `^\d+\.\d+\.\d+(-[a-zA-Z0-9]+)?$`, exit with code 1 and clear error message if empty or malformed
-- [ ] T003 [US1] Refactor `MEASURE_URL` in convert.py to use f-string with `SAFR_IG_VERSION` instead of hardcoded `|1.0.0-ballot` (line ~54)
+- [X] T001 [US1] Add `SAFR_IG_VERSION = "1.0.0-ballot"` constant near the top of convert.py (before existing profile URL constants, around line 36)
+- [X] T002 [US1] Add startup validation for `SAFR_IG_VERSION` in convert.py — regex check `^\d+\.\d+\.\d+(-[a-zA-Z0-9]+)?$`, exit with code 1 and clear error message if empty or malformed
+- [X] T003 [US1] Refactor `MEASURE_URL` in convert.py to use f-string with `SAFR_IG_VERSION` instead of hardcoded `|1.0.0-ballot` (line ~54)
 
 **Checkpoint**: `SAFR_IG_VERSION` constant exists and is validated at startup. `MEASURE_URL` derives its version from the constant. Changing `SAFR_IG_VERSION` updates the Measure URL automatically. The converter exits with a clear error if the version is invalid.
 
@@ -55,9 +55,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T004 [P] [US2] Update `BUNDLE_PROFILE` constant in convert.py to append `|{SAFR_IG_VERSION}` using f-string (line ~37)
-- [ ] T005 [P] [US2] Update `ORG_PROFILE` constant in convert.py to append `|{SAFR_IG_VERSION}` using f-string (line ~38)
-- [ ] T006 [US2] Verify external profile constants (`MEASUREREPORT_PROFILE`, `QICORE_ORG_PROFILE`, `LOCATION_PROFILE`, `DEVICE_PROFILE`) in convert.py are NOT modified — confirm they retain their existing versioning
+- [X] T004 [P] [US2] Update `BUNDLE_PROFILE` constant in convert.py to append `|{SAFR_IG_VERSION}` using f-string (line ~37)
+- [X] T005 [P] [US2] Update `ORG_PROFILE` constant in convert.py to append `|{SAFR_IG_VERSION}` using f-string (line ~38)
+- [X] T006 [US2] Verify external profile constants (`MEASUREREPORT_PROFILE`, `QICORE_ORG_PROFILE`, `LOCATION_PROFILE`, `DEVICE_PROFILE`) in convert.py are NOT modified — confirm they retain their existing versioning
 
 **Checkpoint**: Generated FHIR output includes versioned SAFR profile URLs. External profiles are unchanged. Changing `SAFR_IG_VERSION` updates all SAFR profile URLs in output without other code changes.
 
@@ -71,9 +71,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T007 [US3] Add a step in .github/workflows/ci.yml to extract `SAFR_IG_VERSION` from convert.py using Python one-liner: `python3 -c "import re; m=re.search(r\"SAFR_IG_VERSION\s*=\s*['\"]([^'\"]+)['\"]\", open('convert.py').read()); print(m.group(1))"`
-- [ ] T008 [US3] Add an echo step in .github/workflows/ci.yml to log the extracted IG version: `echo "Validating against SAFR IG version: $SAFR_IG_VERSION"`
-- [ ] T009 [US3] Update the FHIR Validator invocation in .github/workflows/ci.yml to use `-ig hl7.fhir.us.safr#$SAFR_IG_VERSION` instead of unversioned `-ig hl7.fhir.us.safr` (line ~58)
+- [X] T007 [US3] Add a step in .github/workflows/ci.yml to extract `SAFR_IG_VERSION` from convert.py using Python one-liner: `python3 -c "import re; m=re.search(r\"SAFR_IG_VERSION\s*=\s*['\"]([^'\"]+)['\"]\", open('convert.py').read()); print(m.group(1))"`
+- [X] T008 [US3] Add an echo step in .github/workflows/ci.yml to log the extracted IG version: `echo "Validating against SAFR IG version: $SAFR_IG_VERSION"`
+- [X] T009 [US3] Update the FHIR Validator invocation in .github/workflows/ci.yml to use `-ig hl7.fhir.us.safr#$SAFR_IG_VERSION` instead of unversioned `-ig hl7.fhir.us.safr` (line ~58)
 
 **Checkpoint**: CI validates against the exact IG version. CI logs clearly state which SAFR IG version was used. Changing `SAFR_IG_VERSION` in `convert.py` automatically updates the CI validation target.
 
@@ -83,8 +83,8 @@
 
 **Purpose**: End-to-end verification across all stories
 
-- [ ] T010 Run converter against test CSV (`input/2025.10.21.Test.Facility.BedCapacity.csv`) and verify output matches quickstart.md expectations in convert.py
-- [ ] T011 Verify that changing `SAFR_IG_VERSION` to a different value (e.g., `"1.0.0"`) propagates to all SAFR profile URLs and CI validation without other code changes in convert.py
+- [X] T010 Run converter against test CSV (`input/2025.10.21.Test.Facility.BedCapacity.csv`) and verify output matches quickstart.md expectations in convert.py
+- [X] T011 Verify that changing `SAFR_IG_VERSION` to a different value (e.g., `"1.0.0"`) propagates to all SAFR profile URLs and CI validation without other code changes in convert.py
 
 ---
 
