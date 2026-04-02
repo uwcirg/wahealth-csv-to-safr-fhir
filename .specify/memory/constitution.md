@@ -1,14 +1,15 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.0.1
-- Modified principles: None (content preserved; headings restructured)
+- Version change: 1.0.1 → 1.1.0
+- Modified principles:
+  - FHIR Profile Conformance — expanded with IG version tracking
+    requirements (code MUST declare target IG version, accommodate
+    IG version changes via configuration or constants)
+  - Validation-Driven Testing — expanded to require testing against
+    a specific IG version, recording which version was used in CI
+    output and test artifacts
 - Added sections: None
 - Removed sections: None
-- Structural changes:
-  - Reformatted from flat ## Principle N headings to spec-kit template
-    structure: ## Core Principles > ### Name, plus named ## sections
-  - Governance footer converted to template inline format
-  - Removed horizontal rules between principles
 - Templates requiring updates:
   - .specify/templates/plan-template.md — ✅ no updates needed
     (Constitution Check section is generic, references "constitution file")
@@ -57,7 +58,9 @@ errors.
 **Rationale:** The output is consumed by state and federal FHIR servers
 that enforce profile validation. A non-conformant Bundle is a rejected
 submission. Profile conformance is a correctness requirement, not a
-nice-to-have.
+nice-to-have. The SAFR IG will evolve over time (published at
+https://hl7.org/fhir/us/safr); the converter MUST track which version
+it targets and accommodate version changes without ad-hoc code edits.
 
 **Rules:**
 - Bundle: `us-safr-measurereport-bundle`
@@ -71,6 +74,18 @@ nice-to-have.
 - Warnings from the HL7 validator are acceptable; errors are not.
 - When the SAFR IG publishes new versions, validate against the latest
   and update profile URLs accordingly.
+- **IG Version Tracking:** The code MUST declare which version of the
+  US SAFR IG it was built to conform to. This declaration MUST be
+  maintained as a named constant or configuration value (not buried
+  in comments) so it is programmatically accessible.
+- **IG Version in Output:** Generated FHIR resources SHOULD include
+  the target IG version in profile canonical URLs where the IG
+  specifies versioned canonicals (e.g.,
+  `http://hl7.org/fhir/us/safr/StructureDefinition/...|1.0.0`).
+- **Accommodating IG Changes:** When the SAFR IG publishes a new
+  version, updating the target version MUST be a deliberate,
+  reviewable change (constant/config update + validation pass), not
+  an automatic or silent upgrade.
 
 ### Validation-Driven Testing
 
@@ -82,7 +97,9 @@ Bundles using the HL7 FHIR Reference Validator (`validator_cli.jar`).
 specification, the most valuable test is "does the output conform to
 the spec?" Unit tests on internal functions are secondary to this. The
 HL7 Reference Validator is the authoritative arbiter of FHIR
-conformance.
+conformance. Because the SAFR IG evolves, tests MUST record which IG
+version they validated against so results are reproducible and
+regressions from IG version changes are detectable.
 
 **Rules:**
 - The `input/` directory contains canonical test CSV files (currently
@@ -99,6 +116,18 @@ conformance.
   logic (e.g., aggregate calculations, unoccupied-bed clamping, date
   parsing) where correctness is not fully captured by profile
   validation alone.
+- **IG Version in Validation:** The HL7 FHIR Validator MUST be
+  invoked with the specific SAFR IG version (e.g., via `-ig
+  hl7.fhir.us.safr#1.0.0`) rather than an unversioned reference, so
+  validation results are reproducible.
+- **Recording the IG Version:** CI output and test artifacts MUST
+  record which version of the SAFR IG was used for validation. This
+  MAY be achieved by logging the `-ig` argument, embedding it in
+  test output, or maintaining it in a CI configuration variable.
+- **Version Change as a Test Event:** When the target IG version is
+  updated, a full validation pass against the new version MUST be
+  performed and its results reviewed before the version change is
+  merged.
 
 ### Data Integrity and Defensive Transformation
 
@@ -266,4 +295,4 @@ Split only when complexity demands it.
   exception and the reasoning in the relevant spec or PR — do not
   silently deviate.
 
-**Version**: 1.0.1 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-04-01
+**Version**: 1.1.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-04-02
