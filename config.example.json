@@ -12,7 +12,7 @@
     }
   },
   "location": {
-    "identifier_system": "http://example.org/fhir/location-identifier",
+    "identifier_system": "urn:oid:2.16.840.1.113883.3.1",
     "identifier_value": "FACILITY-ID",
     "name": "Your Hospital Main Campus",
     "description": "Main hospital campus"
@@ -20,7 +20,7 @@
   "software": {
     "name": "safr-csv-fhir",
     "version": "1.0.0",
-    "identifier_system": "http://example.org/fhir/device-identifier",
+    "identifier_system": "urn:oid:2.16.840.1.113883.3.2",
     "identifier_value": "safr-csv-fhir"
   },
   "server": {

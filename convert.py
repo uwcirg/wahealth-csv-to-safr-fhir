@@ -35,21 +35,21 @@ logger = logging.getLogger(__name__)
 
 # --- Constants ---
 
-SAFR_IG_VERSION = "1.0.0-ballot"
+SAFR_IG_VERSION = "1.0.0"
 
 if not re.match(r"^\d+\.\d+\.\d+(-[a-zA-Z0-9]+)?$", SAFR_IG_VERSION):
     print(f"ERROR: SAFR_IG_VERSION is invalid: '{SAFR_IG_VERSION}'. "
           "Expected semver format (e.g., '1.0.0' or '1.0.0-ballot').", file=sys.stderr)
     sys.exit(1)
 
-BUNDLE_PROFILE = f"http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-measurereport-bundle|{SAFR_IG_VERSION}"
+BUNDLE_PROFILE = "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-measurereport-bundle"
 MEASUREREPORT_PROFILE = "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/indv-measurereport-deqm"
-ORG_PROFILE = f"http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-submitting-organization|{SAFR_IG_VERSION}"
+ORG_PROFILE = "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-submitting-organization"
 QICORE_ORG_PROFILE = "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-organization"
 LOCATION_PROFILE = "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-location"
 DEVICE_PROFILE = "http://hl7.org/fhir/uv/crmi/StructureDefinition/crmi-softwaresystemdevice|1.0.0"
 
-BED_CODE_SYSTEM = "http://hl7.org/fhir/us/safr/CodeSystem/us-safr-bed-capacity-example-codes"
+BED_CODE_SYSTEM = "http://loinc.org"
 MEASURE_POP_SYSTEM = "http://terminology.hl7.org/CodeSystem/measure-population"
 MEASURE_SCORING_SYSTEM = "http://terminology.hl7.org/CodeSystem/measure-scoring"
 IMPROVEMENT_SYSTEM = "http://terminology.hl7.org/CodeSystem/measure-improvement-notation"
@@ -64,14 +64,43 @@ MEASURE_URL = f"http://hl7.org/fhir/us/safr/Measure/BedCapacityMeasure|{SAFR_IG_
 MEASURE_SCORING_EXT = "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-measureScoring"
 DATA_LOCATION_EXT = "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-dataLocation"
 
+# LOINC codes for bed capacity concepts (STU 1)
+LOINC_CODES = {
+    "AllBedsOccupied": "112579-8",
+    "AllBedsUnoccupied": "112578-0",
+    "AdultTotalOccupied": "112577-2",
+    "AdultTotalUnoccupied": "112576-4",
+    "AdultICUOccupied": "112575-6",
+    "AdultICUUnoccupied": "112574-9",
+    "AdultNonICUOccupied": "112572-3",
+    "AdultNonICUUnoccupied": "112571-5",
+    "PedsTotalOccupied": "112564-0",
+    "PedsTotalUnoccupied": "112563-2",
+    "PedsICUOccupied": "112562-4",
+    "PedsICUUnoccupied": "112561-6",
+    "PedsNonICUOccupied": "112559-0",
+    "PedsNonICUUnoccupied": "112558-2",
+    "SpecialtyTotalOccupied": "112551-7",
+    "SpecialtyTotalUnoccupied": "112550-9",
+    "NICUTotalOccupied": "112545-9",
+    "NICUTotalUnoccupied": "112544-2",
+    "NurseryOccupied": "112535-0",
+    "NurseryUnoccupied": "112534-3",
+    "SurgeActiveTotalOccupied": "112525-1",
+    "SurgeActiveTotalUnoccupied": "112524-4",
+    "AdultEDCensus": "112512-9",
+    "PedsEDTotalCensus": "112510-3",
+    "TotalEDCensus": "112508-7",
+}
+
 # Direct bed type mappings: (csv_prefix, occupied_code, occupied_display, unoccupied_code, unoccupied_display)
 BED_MAPPINGS = [
     ("icu_beds_adult", "AdultICUOccupied", "Adult ICU Census", "AdultICUUnoccupied", "Adult ICU Unoccupied"),
     ("icu_beds_pediatric", "PedsICUOccupied", "Peds ICU Census", "PedsICUUnoccupied", "Peds ICU Unoccupied"),
     ("acute_beds_adult", "AdultNonICUOccupied", "Adult Non-ICU Census", "AdultNonICUUnoccupied", "Adult Non-ICU Unoccupied"),
     ("acute_beds_pediatric", "PedsNonICUOccupied", "Peds Non-ICU Census", "PedsNonICUUnoccupied", "Peds Non-ICU Unoccupied"),
-    ("neonatal_icu_beds", "NICUOccupied", "Specialty NICU Census", "NICUUnoccupied", "Specialty NICU Unoccupied"),
-    ("nursery_beds", "NurseryOccupied", "Specialty Nursery Census", "NurseryUnoccupied", "Specialty Nursery Unoccupied"),
+    ("neonatal_icu_beds", "NICUTotalOccupied", "NICU Total Census", "NICUTotalUnoccupied", "NICU Total Unoccupied"),
+    ("nursery_beds", "NurseryOccupied", "Nursery Census", "NurseryUnoccupied", "Nursery Unoccupied"),
     ("beds_in_overflow_surge_expansion_areas", "SurgeActiveTotalOccupied", "Surge Total Active Census", "SurgeActiveTotalUnoccupied", "Surge Total Active Unoccupied"),
 ]
 
@@ -135,19 +164,19 @@ def make_uuid():
     return f"urn:uuid:{uuid.uuid4()}"
 
 
-def build_group(code, display, count):
+def build_group(concept_name, display, count):
     """Create one MeasureReport group entry."""
+    loinc_code = LOINC_CODES[concept_name]
     return {
-        "id": f"{code}-bed-capacity-group",
+        "id": f"{concept_name}-bed-capacity-group",
         "code": {
             "coding": [{
                 "system": BED_CODE_SYSTEM,
-                "code": code,
-                "display": display,
+                "code": loinc_code,
             }]
         },
         "population": [{
-            "id": f"{code}-initial-population",
+            "id": f"{concept_name}-initial-population",
             "code": {
                 "coding": [{
                     "system": MEASURE_POP_SYSTEM,
@@ -176,7 +205,7 @@ def compute_groups(row):
     total_ed = adult_ed + peds_ed
 
     groups.append(build_group("AdultEDCensus", "Adult ED Total Census", adult_ed))
-    groups.append(build_group("PedsEDCensus", "Peds ED Census", peds_ed))
+    groups.append(build_group("PedsEDTotalCensus", "Peds ED Total Census", peds_ed))
     groups.append(build_group("TotalEDCensus", "Total ED Census", total_ed))
 
     # Computed aggregates

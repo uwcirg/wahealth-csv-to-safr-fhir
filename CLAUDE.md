@@ -6,6 +6,7 @@ Auto-generated from all feature plans. Last updated: 2026-04-02
 - Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning) (002-ig-version-tracking)
 - Filesystem — CSV input, JSON output, JSON config (002-ig-version-tracking)
 - Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff`, `validator_cli.jar`, `gitleaks` (003-constitution-repo-update)
+- Python 3 (stdlib only) + None at runtime (004-safr-ig-stu1-update)
 
 - Python 3 (stdlib only for runtime; dev tools use pip) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning) (001-constitution-alignment)
 
@@ -25,10 +26,10 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3 (stdlib only for runtime; dev tools use pip): Follow standard conventions
 
 ## Recent Changes
+- 005-constitution-repo-sync: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning)
+- 004-safr-ig-stu1-update: Added Python 3 (stdlib only) + None at runtime
 - 003-constitution-repo-update: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff`, `validator_cli.jar`, `gitleaks`
-- 002-ig-version-tracking: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning)
 
-- 001-constitution-alignment: Added Python 3 (stdlib only for runtime; dev tools use pip) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning)
 
 <!-- MANUAL ADDITIONS START -->
 
@@ -55,7 +56,7 @@ done
 Extract the IG version from `convert.py` so the validator uses the correct profile version:
 
 ```bash
-SAFR_IG_VERSION=$(python3 -c "import re; m=re.search(r\"SAFR_IG_VERSION\s*=\s*['\"]([^'\"]+)['\"]\", open('convert.py').read()); print(m.group(1))")
+SAFR_IG_VERSION=$(grep -oP 'SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py)
 ```
 
 ### Step 3: Validate FHIR Bundles
@@ -68,9 +69,16 @@ java -jar validator_cli.jar output/**/*.json \
   -ig hl7.fhir.us.safr#$SAFR_IG_VERSION
 ```
 
-### Step 4: Zero errors required
+### Step 4: Zero project-introduced errors required
 
-The validation **MUST** produce zero errors. Warnings are acceptable. If errors occur, fix the issue and re-run the full pipeline from Step 1.
+The validation **MUST** produce zero errors **not attributable to known upstream issues**. Warnings are acceptable.
+
+**Known upstream error patterns to filter** (see `known-validation-issues.md` for full root-cause analysis):
+
+1. `extension-MeasureReport.supplementalData` — DEQM v5.0.0 references an unresolvable R5 cross-version extension, causing slicing evaluation to fail on MeasureReport extensions.
+2. `Slice 'Bundle.entry:measurereport': a matching slice is required` — Cascading failure from issue 1; the Bundle slice discriminator cannot validate the MeasureReport profile.
+
+These are the same patterns filtered by CI's `grep -v` in `.github/workflows/ci.yml`. If the validator output contains **only** errors matching these two patterns, validation **passes**. Any error **not** matching these patterns is a project-introduced blocker — fix the issue and re-run the full pipeline from Step 1.
 
 ### Behavioral Requirements
 
