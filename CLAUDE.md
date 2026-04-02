@@ -69,9 +69,12 @@ java -jar validator_cli.jar output/**/*.json \
   -ig hl7.fhir.us.safr#$SAFR_IG_VERSION
 ```
 
-### Step 4: Zero errors required
+### Step 4: Zero project-introduced errors required
 
-The validation **MUST** produce zero errors. Warnings are acceptable. If errors occur, fix the issue and re-run the full pipeline from Step 1.
+The validation **MUST** produce zero errors **not attributable to known upstream issues**. Warnings are acceptable.
+
+- Errors matching patterns documented in `known-validation-issues.md` (e.g., DEQM v5.0.0 cross-version extension resolution, cascading Bundle slice failures) are upstream issues — note them but do **not** treat them as blockers.
+- Any error **not** matching a documented known issue is a blocker. Fix the issue and re-run the full pipeline from Step 1.
 
 ### Behavioral Requirements
 

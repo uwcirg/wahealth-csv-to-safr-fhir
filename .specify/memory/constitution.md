@@ -1,13 +1,13 @@
 <!--
 Sync Impact Report
-- Version change: 1.1.0 → 1.2.0
+- Version change: 1.2.0 → 1.3.0
 - Modified principles:
-  - Validation-Driven Testing — added "LLM Development Validation"
-    subsection requiring LLM agents performing dev work to run the
-    same FHIR validation pipeline as GitHub CI (convert test fixtures,
-    extract IG version, run validator_cli.jar) before considering
-    work complete. Elevated local validation from SHOULD to MUST for
-    LLM agents.
+  - Validation-Driven Testing — added "Known Upstream Validation
+    Issues" subsection requiring that upstream IG errors be documented
+    in known-validation-issues.md, filtered in CI, and tracked for
+    reporting to the responsible HL7 working groups.
+  - CI Pipeline — added known-issue filtering requirement and
+    reference to known-validation-issues.md.
 - Added sections: None
 - Removed sections: None
 - Templates requiring updates:
@@ -144,6 +144,33 @@ regressions from IG version changes are detectable.
   If `validator_cli.jar` or Java is not available locally, the LLM
   MUST inform the user and request that the environment be set up
   before proceeding, rather than silently skipping validation.
+- **Known Upstream Validation Issues:** Some FHIR validation errors
+  originate in upstream IG dependencies (e.g., DEQM cross-version
+  extension resolution failures) rather than in this project's
+  converter output. These errors MUST be documented in
+  `known-validation-issues.md` at the repository root and filtered
+  in CI so the build stays green while they remain unresolved
+  upstream.
+  - Each entry in `known-validation-issues.md` MUST include: the
+    exact validator error message, the affected resource type, root
+    cause analysis, the responsible upstream package and HL7 working
+    group, reproduction steps proving the error exists in the IG's
+    own published examples, and the environment tested.
+  - Known issues MUST NOT be silently ignored. They are tracked
+    explicitly so the project can report them to the responsible HL7
+    working groups (e.g., Da Vinci CQI for DEQM issues, SAFR WG for
+    SAFR profile issues) and advocate for upstream fixes.
+  - When an upstream fix is published (new IG version, validator
+    update), the corresponding entry MUST be retested and removed
+    from `known-validation-issues.md` if resolved.
+  - CI filtering logic MUST match only the specific error patterns
+    documented in `known-validation-issues.md` — never broad
+    wildcards that could mask new, legitimate errors.
+  - LLM agents performing local validation (see above) SHOULD apply
+    the same known-issue filtering as CI. If they encounter errors
+    matching documented known issues, they SHOULD note them but MUST
+    NOT treat them as blockers. Errors not matching known issues
+    remain blockers.
 
 ### Data Integrity and Defensive Transformation
 
@@ -261,7 +288,12 @@ workstations.
 - **Lint:** Python linter (e.g., `ruff` or `flake8`) with consistent
   style rules.
 - **FHIR Validation:** Run the converter against test inputs, then
-  validate output with `validator_cli.jar`. Zero errors required.
+  validate output with `validator_cli.jar`. Zero project-introduced
+  errors required. Known upstream errors documented in
+  `known-validation-issues.md` MUST be filtered by matching their
+  specific error patterns so the build passes while they remain
+  unresolved upstream. Any error not matching a documented known issue
+  MUST fail the build.
 - **Secret scanning:** Reject commits containing likely credentials.
 - Checks run via GitHub Actions.
 - The CI pipeline itself is subject to this constitution — changes to
@@ -311,4 +343,4 @@ Split only when complexity demands it.
   exception and the reasoning in the relevant spec or PR — do not
   silently deviate.
 
-**Version**: 1.2.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-04-02
+**Version**: 1.3.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-04-02
