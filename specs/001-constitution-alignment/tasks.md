@@ -56,7 +56,7 @@
 - [ ] T005 [US2] Create directory `.github/workflows/` at repository root
 - [ ] T006 [US2] Create `.github/workflows/ci.yml` with workflow trigger on `pull_request` to `main` and `push` to `main`
 - [ ] T007 [US2] Add lint job to `.github/workflows/ci.yml`: checkout repo, install `ruff` via pip, run `ruff check convert.py`
-- [ ] T008 [US2] Add FHIR validation job to `.github/workflows/ci.yml`: checkout repo, setup Java 17, download/cache `validator_cli.jar` from `https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar`, run `python3 convert.py` against each CSV in `input/` matching `*.BedCapacity.csv` (excluding `*column-labels-only*`), then validate all output JSON Bundles with `java -jar validator_cli.jar output/**/*.json -version 4.0.1 -ig hl7.fhir.us.safr`
+- [ ] T008 [US2] Add FHIR validation job to `.github/workflows/ci.yml`: checkout repo, setup Java 17, download/cache `validator_cli.jar` from `https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar`, run `python3 convert.py --config config.example.json` against each CSV in `input/` matching `*.BedCapacity.csv` (excluding `*column-labels-only*`), then validate all output JSON Bundles with `java -jar validator_cli.jar output/**/*.json -version 4.0.1 -ig hl7.fhir.us.safr`
 - [ ] T009 [US2] Add secret scanning job to `.github/workflows/ci.yml`: use `gitleaks/gitleaks-action@v2` to scan for committed credentials
 - [ ] T010 [P] [US2] Create `ruff.toml` at repository root with minimal configuration (line-length = 120 or match existing convert.py style)
 - [ ] T011 [US2] Run `ruff check convert.py` locally and fix any lint violations in `convert.py` (minor style fixes only — no functional changes)

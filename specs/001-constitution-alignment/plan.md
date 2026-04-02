@@ -5,7 +5,7 @@
 
 ## Summary
 
-Bring the repository into compliance with its newly-written constitution by adding a `.gitignore` for secret protection, a GitHub Actions CI pipeline (lint, FHIR validation, secret scanning), updating `config.example.json` with obvious placeholder credentials, and establishing lint configuration. No changes to runtime code (`convert.py`) are required.
+Bring the repository into compliance with its newly-written constitution by adding a `.gitignore` for secret protection, a GitHub Actions CI pipeline (lint, FHIR validation, secret scanning), updating `config.example.json` with obvious placeholder credentials, and establishing lint configuration. No functional changes to runtime code (`convert.py`); minor lint fixes may be needed to pass the linter.
 
 ## Technical Context
 
