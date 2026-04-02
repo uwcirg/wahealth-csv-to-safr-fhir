@@ -24,9 +24,9 @@
     "identifier_value": "safr-csv-fhir"
   },
   "server": {
-    "base_url": "",
-    "token_endpoint": "",
-    "client_id": "",
-    "client_secret": ""
+    "base_url": "YOUR_FHIR_SERVER_URL",
+    "token_endpoint": "YOUR_TOKEN_ENDPOINT",
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET"
   }
 }
