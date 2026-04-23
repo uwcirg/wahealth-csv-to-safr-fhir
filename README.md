@@ -1,6 +1,6 @@
 # wahealth-csv-to-safr-fhir
 
-Converts WA Health hospital bed capacity CSVs to FHIR R4 **SAFR Bed Capacity MeasureReport Bundles**.
+Converts WA Health hospital bed capacity CSVs to FHIR R4 **SAFR Bed Capacity MeasureReport Bundles**, conforming to the [US SAFR Implementation Guide](https://hl7.org/fhir/us/safr) for structural profiles and the [CDC NHSN SAFR Content IG](https://safr-ci.nhsnlink.org) for Measure definitions.
 
 Requires Python 3 (stdlib only — no pip install needed).
 
@@ -93,13 +93,36 @@ Each run creates a timestamped log file in the `log/` directory (`convert_YYYYMM
 
 ## FHIR profiles used
 
-| Resource | Profile |
-|---|---|
-| Bundle | `us-safr-measurereport-bundle` |
-| MeasureReport | `indv-measurereport-deqm` (DEQM) |
-| Organization | `us-safr-submitting-organization`, `qicore-organization` |
-| Location | `qicore-location` |
-| Device | `crmi-softwaresystemdevice` |
+| Resource | Profile | Source IG |
+|---|---|---|
+| Bundle | `us-safr-measurereport-bundle` | US SAFR |
+| MeasureReport | `indv-measurereport-deqm` (DEQM) | DaVinci DEQM |
+| MeasureReport.measure | `BedCapacityMeasure` | NHSN SAFR Content IG |
+| Organization | `us-safr-submitting-organization`, `qicore-organization` | US SAFR / QI-Core |
+| Location | `qicore-location` | QI-Core |
+| Device | `crmi-softwaresystemdevice` | CRMI |
+
+## FHIR Implementation Guides
+
+This project targets two independently versioned FHIR Implementation Guides:
+
+| IG Name | Package ID | Publication URL | Provides |
+|---|---|---|---|
+| US SAFR (base) | `hl7.fhir.us.safr` | https://hl7.org/fhir/us/safr | Structural profiles for Bundle, MeasureReport, and Organization |
+| CDC NHSN SAFR (content) | `gov.cdc.nhsn.safr` | https://safr-ci.nhsnlink.org | Computable Measure definitions (BedCapacityMeasure, HRDMeasure), CodeSystems, and CapabilityStatements |
+
+The Content IG depends on the base IG. The base IG defines *how* resources are shaped; the Content IG defines *what* is being measured.
+
+> **Note:** The Content IG package (`gov.cdc.nhsn.safr`) is not yet published to the standard FHIR package registries. The FHIR validator references it via its publication URL.
+
+### Version tracking
+
+The converter tracks two independent IG version constants in `convert.py`:
+
+- `SAFR_IG_VERSION` — the target version of the base US SAFR IG (`hl7.fhir.us.safr`)
+- `NHSN_SAFR_IG_VERSION` — the target version of the CDC NHSN SAFR Content IG (`gov.cdc.nhsn.safr`)
+
+These are independently versioned. Updating either constant is a deliberate, reviewable change that triggers a full FHIR validation pass before merge.
 
 ## CSV columns processed
 
