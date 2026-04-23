@@ -1,6 +1,6 @@
 # wahealth-csv-to-safr-fhir Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-02
+Auto-generated from all feature plans. Last updated: 2026-04-23
 
 ## Active Technologies
 - Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning) (002-ig-version-tracking)
@@ -26,9 +26,9 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3 (stdlib only for runtime; dev tools use pip): Follow standard conventions
 
 ## Recent Changes
+- 006-content-ig-integration: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter),
 - 005-constitution-repo-sync: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning)
 - 004-safr-ig-stu1-update: Added Python 3 (stdlib only) + None at runtime
-- 003-constitution-repo-update: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff`, `validator_cli.jar`, `gitleaks`
 
 
 <!-- MANUAL ADDITIONS START -->
@@ -51,12 +51,13 @@ for csv in input/*.BedCapacity.csv; do
 done
 ```
 
-### Step 2: Extract SAFR IG version
+### Step 2: Extract SAFR IG versions
 
-Extract the IG version from `convert.py` so the validator uses the correct profile version:
+Extract both IG versions from `convert.py` so the validator uses the correct profile versions:
 
 ```bash
-SAFR_IG_VERSION=$(grep -oP 'SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py)
+SAFR_IG_VERSION=$(grep -oP '^SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py)
+NHSN_SAFR_IG_VERSION=$(grep -oP 'NHSN_SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py)
 ```
 
 ### Step 3: Validate FHIR Bundles
@@ -66,7 +67,8 @@ Run the FHIR validator against all generated output:
 ```bash
 java -jar validator_cli.jar output/**/*.json \
   -version 4.0.1 \
-  -ig hl7.fhir.us.safr#$SAFR_IG_VERSION
+  -ig hl7.fhir.us.safr#$SAFR_IG_VERSION \
+  -ig https://safr-ci.nhsnlink.org/package.tgz
 ```
 
 ### Step 4: Zero project-introduced errors required

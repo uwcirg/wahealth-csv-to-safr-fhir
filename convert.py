@@ -36,11 +36,17 @@ logger = logging.getLogger(__name__)
 # --- Constants ---
 
 SAFR_IG_VERSION = "1.0.0"
+# CDC NHSN SAFR Content IG (gov.cdc.nhsn.safr) — independently versioned
+# from the base HL7 IG (hl7.fhir.us.safr) tracked by SAFR_IG_VERSION above.
+NHSN_SAFR_IG_VERSION = "1.0.0"
 
-if not re.match(r"^\d+\.\d+\.\d+(-[a-zA-Z0-9]+)?$", SAFR_IG_VERSION):
-    print(f"ERROR: SAFR_IG_VERSION is invalid: '{SAFR_IG_VERSION}'. "
-          "Expected semver format (e.g., '1.0.0' or '1.0.0-ballot').", file=sys.stderr)
-    sys.exit(1)
+for _name, _ver in [("SAFR_IG_VERSION", SAFR_IG_VERSION),
+                     ("NHSN_SAFR_IG_VERSION", NHSN_SAFR_IG_VERSION)]:
+    if not re.match(r"^\d+\.\d+\.\d+(-[a-zA-Z0-9]+)?$", _ver):
+        print(f"ERROR: {_name} is invalid: '{_ver}'. "
+              "Expected semver format (e.g., '1.0.0' or '1.0.0-ballot').",
+              file=sys.stderr)
+        sys.exit(1)
 
 BUNDLE_PROFILE = "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-measurereport-bundle"
 MEASUREREPORT_PROFILE = "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/indv-measurereport-deqm"
@@ -59,7 +65,7 @@ PHYSICAL_TYPE_SYSTEM = "http://terminology.hl7.org/CodeSystem/location-physical-
 SOFTWARE_TYPE_SYSTEM = "http://terminology.hl7.org/CodeSystem/software-system-type-codes"
 NHSN_SYSTEM = "https://www.cdc.gov/nhsn/OrgID"
 
-MEASURE_URL = f"http://hl7.org/fhir/us/safr/Measure/BedCapacityMeasure|{SAFR_IG_VERSION}"
+MEASURE_URL = f"http://www.cdc.gov/nhsn/fhirportal/safr/ig/Measure/BedCapacityMeasure|{NHSN_SAFR_IG_VERSION}"
 
 MEASURE_SCORING_EXT = "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-measureScoring"
 DATA_LOCATION_EXT = "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-dataLocation"

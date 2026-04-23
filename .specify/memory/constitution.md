@@ -1,24 +1,32 @@
 <!--
 Sync Impact Report
-- Version change: 1.2.0 → 1.3.0
+- Version change: 1.3.0 → 1.4.0
 - Modified principles:
-  - Validation-Driven Testing — added "Known Upstream Validation
-    Issues" subsection requiring that upstream IG errors be documented
-    in known-validation-issues.md, filtered in CI, and tracked for
-    reporting to the responsible HL7 working groups.
-  - CI Pipeline — added known-issue filtering requirement and
-    reference to known-validation-issues.md.
+  - FHIR Profile Conformance — expanded to distinguish the base
+    structural IG (hl7.fhir.us.safr) from the CDC NHSN Content IG
+    (gov.cdc.nhsn.safr). Added Content IG Version Tracking rule
+    requiring a separate named constant. Updated Measure canonical
+    URL guidance to reference the Content IG's canonical
+    (http://www.cdc.gov/nhsn/fhirportal/safr/ig/Measure/...).
+  - Validation-Driven Testing — updated validation commands to
+    include -ig gov.cdc.nhsn.safr alongside -ig hl7.fhir.us.safr.
+    Updated LLM Development Validation section likewise.
+  - CI Pipeline — updated FHIR Validation description to reference
+    both IGs.
+  - Scope — Bed Capacity and HRD Surveillance — added reference to
+    the Content IG as the authoritative source for Measure definitions.
 - Added sections: None
 - Removed sections: None
 - Templates requiring updates:
   - .specify/templates/plan-template.md — ✅ no updates needed
-    (Constitution Check section is generic, references "constitution file")
+    (Constitution Check section is generic, references "constitution
+    file")
   - .specify/templates/spec-template.md — ✅ no updates needed
     (no constitution-specific references)
   - .specify/templates/tasks-template.md — ✅ no updates needed
     (no constitution-specific references)
   - .specify/templates/commands/ — ✅ no command files exist
-- Follow-up TODOs: None
+- Follow-up TODOs: None (implemented in feature 006-content-ig-integration)
 -->
 
 # WA Health SAFR CSV-to-FHIR Converter Constitution
@@ -26,7 +34,8 @@ Sync Impact Report
 > Principles governing the development, testing, and maintenance of a
 > Python utility that converts Washington State hospital bed capacity
 > and HRD surveillance CSV data into FHIR R4 Bundles compliant with
-> the US SAFR Implementation Guide.
+> the US SAFR Implementation Guide and the CDC NHSN SAFR Content
+> Implementation Guide.
 
 ## Core Principles
 
@@ -52,37 +61,59 @@ design decision and remains non-negotiable.
 ### FHIR Profile Conformance
 
 All generated resources MUST conform to the US SAFR Implementation
-Guide profiles and pass the HL7 FHIR Reference Validator with zero
-errors.
+Guide profiles and the CDC NHSN SAFR Content IG Measure definitions,
+and pass the HL7 FHIR Reference Validator with zero errors.
 
 **Rationale:** The output is consumed by state and federal FHIR servers
 that enforce profile validation. A non-conformant Bundle is a rejected
 submission. Profile conformance is a correctness requirement, not a
-nice-to-have. The SAFR IG will evolve over time (published at
-https://hl7.org/fhir/us/safr); the converter MUST track which version
-it targets and accommodate version changes without ad-hoc code edits.
+nice-to-have. Two IGs govern this project's output:
+
+- **Base structural IG** (`hl7.fhir.us.safr`, published at
+  https://hl7.org/fhir/us/safr) — defines the FHIR profiles for
+  Bundle, MeasureReport, and Organization resources.
+- **Content IG** (`gov.cdc.nhsn.safr`, published at
+  https://safr-ci.nhsnlink.org) — defines the computable Measure
+  resources (BedCapacityMeasure, HRDMeasure), CDC-specific
+  CodeSystems, ValueSets, and CapabilityStatements. This IG depends
+  on the base structural IG.
+
+The converter MUST track which version of each IG it targets and
+accommodate version changes without ad-hoc code edits.
 
 **Rules:**
-- Bundle: `us-safr-measurereport-bundle`
+- Bundle: `us-safr-measurereport-bundle` (base IG)
 - MeasureReport: `indv-measurereport-deqm` (DaVinci DEQM individual)
-- Organization: `us-safr-submitting-organization` and
+- Organization: `us-safr-submitting-organization` (base IG) and
   `qicore-organization`
 - Location: `qicore-location`
 - Device: `crmi-softwaresystemdevice`
 - All internal references use `urn:uuid:` format.
 - Period timestamps MUST include timezone offsets (e.g., `+00:00`).
 - Warnings from the HL7 validator are acceptable; errors are not.
-- When the SAFR IG publishes new versions, validate against the latest
-  and update profile URLs accordingly.
-- **IG Version Tracking:** The code MUST declare which version of the
-  US SAFR IG it was built to conform to. This declaration MUST be
-  maintained as a named constant or configuration value (not buried
-  in comments) so it is programmatically accessible.
+- When either IG publishes new versions, validate against the latest
+  and update profile/Measure URLs accordingly.
+- **Base IG Version Tracking:** The code MUST declare which version of
+  the US SAFR IG (`hl7.fhir.us.safr`) it was built to conform to.
+  This declaration MUST be maintained as a named constant or
+  configuration value (not buried in comments) so it is
+  programmatically accessible.
+- **Content IG Version Tracking:** The code MUST separately declare
+  which version of the CDC NHSN SAFR Content IG
+  (`gov.cdc.nhsn.safr`) it targets. This MUST be a named constant or
+  configuration value distinct from the base IG version, since the
+  two IGs are independently versioned.
+- **Measure Canonical URLs:** The `MeasureReport.measure` field MUST
+  reference the canonical URL defined by the Content IG (e.g.,
+  `http://www.cdc.gov/nhsn/fhirportal/safr/ig/Measure/BedCapacityMeasure`),
+  not the example Measure URL from the base IG. The base IG's
+  `BedCapacityMeasureExample` is informational only; the Content IG's
+  `BedCapacityMeasure` is the computable, authoritative definition.
 - **IG Version in Output:** Generated FHIR resources SHOULD include
   the target IG version in profile canonical URLs where the IG
   specifies versioned canonicals (e.g.,
   `http://hl7.org/fhir/us/safr/StructureDefinition/...|1.0.0`).
-- **Accommodating IG Changes:** When the SAFR IG publishes a new
+- **Accommodating IG Changes:** When either IG publishes a new
   version, updating the target version MUST be a deliberate,
   reviewable change (constant/config update + validation pass), not
   an automatic or silent upgrade.
@@ -97,9 +128,9 @@ Bundles using the HL7 FHIR Reference Validator (`validator_cli.jar`).
 specification, the most valuable test is "does the output conform to
 the spec?" Unit tests on internal functions are secondary to this. The
 HL7 Reference Validator is the authoritative arbiter of FHIR
-conformance. Because the SAFR IG evolves, tests MUST record which IG
-version they validated against so results are reproducible and
-regressions from IG version changes are detectable.
+conformance. Because both the base and content IGs evolve, tests MUST
+record which IG versions they validated against so results are
+reproducible and regressions from IG version changes are detectable.
 
 **Rules:**
 - The `input/` directory contains canonical test CSV files (currently
@@ -118,14 +149,15 @@ regressions from IG version changes are detectable.
   parsing) where correctness is not fully captured by profile
   validation alone.
 - **IG Version in Validation:** The HL7 FHIR Validator MUST be
-  invoked with the specific SAFR IG version (e.g., via `-ig
-  hl7.fhir.us.safr#1.0.0`) rather than an unversioned reference, so
-  validation results are reproducible.
+  invoked with both SAFR IG packages versioned (e.g., via
+  `-ig hl7.fhir.us.safr#1.0.0 -ig gov.cdc.nhsn.safr#1.0.0`) rather
+  than unversioned references, so validation results are reproducible
+  and cover both structural profiles and content definitions.
 - **Recording the IG Version:** CI output and test artifacts MUST
-  record which version of the SAFR IG was used for validation. This
-  MAY be achieved by logging the `-ig` argument, embedding it in
-  test output, or maintaining it in a CI configuration variable.
-- **Version Change as a Test Event:** When the target IG version is
+  record which versions of both IGs were used for validation. This
+  MAY be achieved by logging the `-ig` arguments, embedding them in
+  test output, or maintaining them in CI configuration variables.
+- **Version Change as a Test Event:** When either target IG version is
   updated, a full validation pass against the new version MUST be
   performed and its results reviewed before the version change is
   merged.
@@ -136,9 +168,9 @@ regressions from IG version changes are detectable.
   1. Run the converter against all test fixtures in `input/`
      (excluding `*column-labels-only*` files):
      `python3 convert.py "$csv" --config config.example.json --output-dir output`
-  2. Extract the `SAFR_IG_VERSION` constant from `convert.py`.
+  2. Extract the IG version constants from `convert.py`.
   3. Run the HL7 FHIR Validator against all generated Bundles:
-     `java -jar validator_cli.jar output/**/*.json -version 4.0.1 -ig hl7.fhir.us.safr#$SAFR_IG_VERSION`
+     `java -jar validator_cli.jar output/**/*.json -version 4.0.1 -ig hl7.fhir.us.safr#$SAFR_IG_VERSION -ig https://safr-ci.nhsnlink.org/package.tgz`
   4. Zero errors required; warnings are acceptable.
   The LLM MUST NOT skip validation to save time or defer it to CI.
   If `validator_cli.jar` or Java is not available locally, the LLM
@@ -202,15 +234,18 @@ The converter covers two SAFR measure domains: **bed capacity**
 **Rationale:** The initial scope was bed capacity only. The project
 team has decided to expand to include Hospital Respiratory Data
 (HRD) — COVID-19, influenza, and RSV hospitalization and admission
-metrics from the ~35 currently-unused CSV columns.
+metrics from the ~35 currently-unused CSV columns. Both Measure
+definitions (`BedCapacityMeasure` and `HRDMeasure`) are published by
+the CDC NHSN SAFR Content IG (`gov.cdc.nhsn.safr`), which is the
+authoritative source for computable Measure resources.
 
 **Rules:**
 - Bed capacity: 7 bed types x occupied/unoccupied, 3 ED visit groups,
   8 computed aggregates = 25 MeasureReport groups. This mapping is
   stable.
 - HRD surveillance: Implementation pending. Will produce a separate
-  MeasureReport (or extend the existing one) per the SAFR HRD Measure
-  profile.
+  MeasureReport (or extend the existing one) per the Content IG's
+  `HRDMeasure` definition.
 - Each measure domain MUST have its own test CSV fixtures and
   validation targets.
 - Do not add measure domains beyond bed capacity and HRD without a
@@ -288,12 +323,13 @@ workstations.
 - **Lint:** Python linter (e.g., `ruff` or `flake8`) with consistent
   style rules.
 - **FHIR Validation:** Run the converter against test inputs, then
-  validate output with `validator_cli.jar`. Zero project-introduced
-  errors required. Known upstream errors documented in
-  `known-validation-issues.md` MUST be filtered by matching their
-  specific error patterns so the build passes while they remain
-  unresolved upstream. Any error not matching a documented known issue
-  MUST fail the build.
+  validate output with `validator_cli.jar` against both the base IG
+  (`hl7.fhir.us.safr`) and the Content IG (`gov.cdc.nhsn.safr`).
+  Zero project-introduced errors required. Known upstream errors
+  documented in `known-validation-issues.md` MUST be filtered by
+  matching their specific error patterns so the build passes while
+  they remain unresolved upstream. Any error not matching a documented
+  known issue MUST fail the build.
 - **Secret scanning:** Reject commits containing likely credentials.
 - Checks run via GitHub Actions.
 - The CI pipeline itself is subject to this constitution — changes to
@@ -343,4 +379,4 @@ Split only when complexity demands it.
   exception and the reasoning in the relevant spec or PR — do not
   silently deviate.
 
-**Version**: 1.3.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-04-02
+**Version**: 1.4.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-04-23

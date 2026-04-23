@@ -2,9 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
   push:
-    branches: [main]
 
 jobs:
   lint:
@@ -54,10 +52,12 @@ jobs:
       - name: Extract SAFR IG version
         id: ig-version
         run: |
-          SAFR_IG_VERSION=$(grep -oP 'SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py)
+          SAFR_IG_VERSION=$(grep -oP '^SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py)
+          NHSN_SAFR_IG_VERSION=$(grep -oP 'NHSN_SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py)
           echo "SAFR_IG_VERSION=$SAFR_IG_VERSION" >> "$GITHUB_ENV"
+          echo "NHSN_SAFR_IG_VERSION=$NHSN_SAFR_IG_VERSION" >> "$GITHUB_ENV"
       - name: Log IG version
-        run: echo "Validating against SAFR IG version: $SAFR_IG_VERSION"
+        run: 'echo "Validating against SAFR IG version: $SAFR_IG_VERSION, NHSN SAFR Content IG version: $NHSN_SAFR_IG_VERSION"'
       - name: Validate FHIR Bundles
         run: |
           # Known upstream errors are documented in known-validation-issues.md.
@@ -65,7 +65,8 @@ jobs:
           set +e
           VALIDATOR_OUTPUT=$(java -jar validator_cli.jar output/**/*.json \
             -version 4.0.1 \
-            -ig hl7.fhir.us.safr#$SAFR_IG_VERSION 2>&1)
+            -ig hl7.fhir.us.safr#$SAFR_IG_VERSION \
+            -ig https://safr-ci.nhsnlink.org/package.tgz 2>&1)
           VALIDATOR_EXIT=$?
           set -e
 
@@ -83,12 +84,12 @@ jobs:
 
             if [ -n "$REAL_ERRORS" ]; then
               echo ""
-              echo "::error::FHIR validation (SAFR IG $SAFR_IG_VERSION) found errors beyond known upstream issues (see known-validation-issues.md):"
+              echo "::error::FHIR validation (SAFR IG $SAFR_IG_VERSION, NHSN SAFR Content IG $NHSN_SAFR_IG_VERSION) found errors beyond known upstream issues (see known-validation-issues.md):"
               echo "$REAL_ERRORS"
               exit 1
             else
               echo ""
-              echo "::warning::FHIR validation (SAFR IG $SAFR_IG_VERSION) reported only known upstream DEQM v5.0.0 errors (see known-validation-issues.md). These affect the IG's own published examples and are not caused by this project."
+              echo "::warning::FHIR validation (SAFR IG $SAFR_IG_VERSION, NHSN SAFR Content IG $NHSN_SAFR_IG_VERSION) reported only known upstream errors (see known-validation-issues.md). These affect the IG's own published examples and are not caused by this project."
             fi
           fi
 
