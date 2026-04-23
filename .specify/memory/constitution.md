@@ -1,32 +1,20 @@
 <!--
 Sync Impact Report
-- Version change: 1.3.0 → 1.4.0
+- Version change: 1.4.0 → 1.5.0
 - Modified principles:
-  - FHIR Profile Conformance — expanded to distinguish the base
-    structural IG (hl7.fhir.us.safr) from the CDC NHSN Content IG
-    (gov.cdc.nhsn.safr). Added Content IG Version Tracking rule
-    requiring a separate named constant. Updated Measure canonical
-    URL guidance to reference the Content IG's canonical
-    (http://www.cdc.gov/nhsn/fhirportal/safr/ig/Measure/...).
-  - Validation-Driven Testing — updated validation commands to
-    include -ig gov.cdc.nhsn.safr alongside -ig hl7.fhir.us.safr.
-    Updated LLM Development Validation section likewise.
-  - CI Pipeline — updated FHIR Validation description to reference
-    both IGs.
-  - Scope — Bed Capacity and HRD Surveillance — added reference to
-    the Content IG as the authoritative source for Measure definitions.
-- Added sections: None
+  - Development Workflow — added "README as Living Documentation"
+    subsection requiring that all changes consider whether README.md
+    needs a corresponding update.
+- Added sections:
+  - "### README as Living Documentation" under Development Workflow
 - Removed sections: None
 - Templates requiring updates:
   - .specify/templates/plan-template.md — ✅ no updates needed
-    (Constitution Check section is generic, references "constitution
-    file")
+    (Constitution Check section is generic)
   - .specify/templates/spec-template.md — ✅ no updates needed
-    (no constitution-specific references)
   - .specify/templates/tasks-template.md — ✅ no updates needed
-    (no constitution-specific references)
   - .specify/templates/commands/ — ✅ no command files exist
-- Follow-up TODOs: None (implemented in feature 006-content-ig-integration)
+- Follow-up TODOs: None
 -->
 
 # WA Health SAFR CSV-to-FHIR Converter Constitution
@@ -335,6 +323,29 @@ workstations.
 - The CI pipeline itself is subject to this constitution — changes to
   CI config require the same review as code changes.
 
+### README as Living Documentation
+
+Any change that affects user-facing behavior, project architecture,
+IG conformance, or developer workflow MUST be evaluated for a
+corresponding `README.md` update.
+
+**Rationale:** The README is the first document new contributors,
+hospital IT staff, and LLM agents encounter. If it falls out of sync
+with the code, users make incorrect assumptions — wrong IG versions,
+missing configuration steps, or outdated profile references. Keeping
+the README current is cheaper than debugging the confusion it causes
+when stale.
+
+**Rules:**
+- When a feature adds or changes IG references, profile URLs, CLI
+  flags, configuration fields, output structure, or version tracking
+  constants, the implementer MUST check whether `README.md` needs a
+  corresponding update.
+- README updates SHOULD be included in the same PR as the code change,
+  not deferred to a follow-up.
+- LLM agents performing development work SHOULD flag README staleness
+  if they notice the code has diverged from what the README describes.
+
 ### Single-File Simplicity (Until It Hurts)
 
 Prefer fewer, well-organized files over premature modularization.
@@ -379,4 +390,4 @@ Split only when complexity demands it.
   exception and the reasoning in the relevant spec or PR — do not
   silently deviate.
 
-**Version**: 1.4.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-04-23
+**Version**: 1.5.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-04-23
