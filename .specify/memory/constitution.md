@@ -26,10 +26,7 @@ Sync Impact Report
   - .specify/templates/tasks-template.md — ✅ no updates needed
     (no constitution-specific references)
   - .specify/templates/commands/ — ✅ no command files exist
-- Follow-up TODOs:
-  - Feature spec/plan needed to implement the actual code changes
-    (MEASURE_URL update, SAFR_CI_IG_VERSION constant, validation
-    pipeline updates in CI and CLAUDE.md).
+- Follow-up TODOs: None (implemented in feature 006-content-ig-integration)
 -->
 
 # WA Health SAFR CSV-to-FHIR Converter Constitution
@@ -173,7 +170,7 @@ reproducible and regressions from IG version changes are detectable.
      `python3 convert.py "$csv" --config config.example.json --output-dir output`
   2. Extract the IG version constants from `convert.py`.
   3. Run the HL7 FHIR Validator against all generated Bundles:
-     `java -jar validator_cli.jar output/**/*.json -version 4.0.1 -ig hl7.fhir.us.safr#$SAFR_IG_VERSION -ig gov.cdc.nhsn.safr#$SAFR_CI_IG_VERSION`
+     `java -jar validator_cli.jar output/**/*.json -version 4.0.1 -ig hl7.fhir.us.safr#$SAFR_IG_VERSION -ig https://safr-ci.nhsnlink.org/package.tgz`
   4. Zero errors required; warnings are acceptable.
   The LLM MUST NOT skip validation to save time or defer it to CI.
   If `validator_cli.jar` or Java is not available locally, the LLM
