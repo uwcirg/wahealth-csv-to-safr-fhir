@@ -57,7 +57,7 @@ jobs:
           echo "SAFR_IG_VERSION=$SAFR_IG_VERSION" >> "$GITHUB_ENV"
           echo "NHSN_SAFR_IG_VERSION=$NHSN_SAFR_IG_VERSION" >> "$GITHUB_ENV"
       - name: Log IG version
-        run: echo "Validating against SAFR IG version: $SAFR_IG_VERSION, NHSN SAFR Content IG version: $NHSN_SAFR_IG_VERSION"
+        run: 'echo "Validating against SAFR IG version: $SAFR_IG_VERSION, NHSN SAFR Content IG version: $NHSN_SAFR_IG_VERSION"'
       - name: Validate FHIR Bundles
         run: |
           # Known upstream errors are documented in known-validation-issues.md.
