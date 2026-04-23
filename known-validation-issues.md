@@ -58,9 +58,33 @@ java -jar validator_cli.jar \
 
 Expected result: 6 errors, all matching issues 1 and 2 above.
 
+## Status update (2026-04-23)
+
+Both issues above are **resolved when the CDC NHSN SAFR Content IG
+(`gov.cdc.nhsn.safr`) is included in validation**. The Content IG
+transitively depends on `hl7.fhir.uv.xver-r5.r4#0.1.0`, which
+provides the R5 cross-version extension definitions that the DEQM
+profile's slicing discriminator requires. With this package loaded,
+the validator can resolve the `extension-MeasureReport.supplementalData`
+StructureDefinition, and both issues 1 and 2 no longer reproduce.
+
+As of feature `006-content-ig-integration`, the CI pipeline and LLM
+validation instructions include the Content IG via
+`-ig https://safr-ci.nhsnlink.org/package.tgz`. The `grep -v` filters
+for these errors remain in CI as a safety net in case the Content IG
+URL is temporarily unavailable, but under normal operation these errors
+should not appear.
+
+The issues still reproduce when validating with **only** the base IG
+(`-ig hl7.fhir.us.safr#1.0.0`) without the Content IG. The entries
+above are retained for reference until the upstream DEQM package
+itself resolves the issue.
+
 ## Environment tested
 
 - FHIR Validator: v6.9.4
 - Java: OpenJDK 17
 - IG packages: `hl7.fhir.us.safr#1.0.0`, `hl7.fhir.us.davinci-deqm#5.0.0`
 - Date: 2026-04-02
+- Re-tested with Content IG: 2026-04-23 (0 errors when Content IG
+  included via `https://safr-ci.nhsnlink.org/package.tgz`)
