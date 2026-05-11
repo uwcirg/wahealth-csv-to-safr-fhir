@@ -13,9 +13,10 @@ Sync Impact Report
 - Added sections:
   - "### Multi-Format CSV Input" under Core Principles — establishes
     that the converter must accept the three supported hospital CSV
-    layouts (original WA Health format, WA Health Variable Catalog
-    "Alastair" format, KC multi-hospital format) via header-based
-    format detection that normalizes to one internal row model.
+    layouts (original WA Health format; the "2026-04-30 WA Health
+    dictionary from KC"; and "KC multi-hospital from MFT 2026-05-11")
+    via header-based format detection that normalizes to one internal
+    row model.
 - Removed sections: None
 - Templates requiring updates:
   - .specify/templates/plan-template.md — ✅ no updates needed
@@ -233,19 +234,19 @@ adding a fourth format a localized change.
   (COVID / influenza / RSV) columns present in the file. This is the
   format already implemented; canonical fixture:
   `2025.10.21.Test.Facility.BedCapacity.csv`.
-- **WA Health Variable Catalog format ("Alastair" data dictionary)** —
-  the schema published in
-  `WA-HEALTH-DataDictionary.Variable Catalog.Alastair.2026-04-30.csv`;
-  `Section, Variable Name, Data Type, Description, Notes` catalog
+- **"2026-04-30 WA Health dictionary from KC"** — the schema
+  published in
+  `WA-HEALTH-DataDictionary.Variable Catalog.KC.2026-04-30.csv`;
+  a `Section, Variable Name, Data Type, Description, Notes` catalog
   defining: Report section (`facility`, `county`, `reportingday`,
   `created_on`); Bed Occupancy section (`all_inpatient_cap` /
   `all_inpatient_occ` plus `<area>_cap` / `<area>_occ` for the eight
   areas, `prevd_adult_ed`, `prevd_ped_ed`); COVID-19, Influenza, and
   RSV Stats sections (`covid_*`, `flu_*`, `rsv_*` hospitalization,
   ICU, and age-banded admission counts). No `facility_guid`.
-- **KC multi-hospital format** — Title Case headers, **multiple
-  facilities and multiple reporting dates per file**; columns
-  `Facility`, `Contact`, `Reporting Date` (`YYYY-MM-DD`),
+- **"KC multi-hospital from MFT 2026-05-11"** — Title Case headers,
+  **multiple facilities and multiple reporting dates per file**;
+  columns `Facility`, `Contact`, `Reporting Date` (`YYYY-MM-DD`),
   `Created On` (ISO timestamp), bed occupancy/capacity per area
   (e.g., `ICU Adult Occupancy` / `ICU Adult Capacity`, `Neonatal ICU
   Beds Currently in Use` / `Neonatal ICU Beds Capacity`, `Surge Beds
@@ -272,15 +273,17 @@ adding a fourth format a localized change.
 - Date parsing MUST accommodate each format's date convention
   (`MM/DD/YYYY`, ISO `YYYY-MM-DD`, ISO timestamp); the internal model
   stores a normalized date.
-- When `facility_guid` is absent (Variable Catalog and KC formats),
-  the converter MUST derive a stable identifier from available fields
-  (e.g., facility name + reporting date) for deterministic Bundle
-  identifiers and FHIR-server upsert keys. This fallback MUST be
-  documented in `README.md`.
-- Columns a given format does not carry (e.g., HRD counts in the KC
-  format, `county`/`created_on` in the original format) are simply
-  absent from that format's row model; their corresponding outputs
-  are omitted, not defaulted to fabricated values.
+- When `facility_guid` is absent (the "2026-04-30 WA Health
+  dictionary from KC" and "KC multi-hospital from MFT 2026-05-11"
+  formats), the converter MUST derive a stable identifier from
+  available fields (e.g., facility name + reporting date) for
+  deterministic Bundle identifiers and FHIR-server upsert keys. This
+  fallback MUST be documented in `README.md`.
+- Columns a given format does not carry (e.g., HRD counts in the "KC
+  multi-hospital from MFT 2026-05-11" format, `county`/`created_on` in
+  the original format) are simply absent from that format's row model;
+  their corresponding outputs are omitted, not defaulted to fabricated
+  values.
 - New input formats MUST be added by extending the
   detection/parser/mapper layer — never by special-casing a layout
   inside the FHIR generation code or by mutating the shared internal
@@ -334,10 +337,10 @@ computable Measure resources.
   MeasureReport (or extend the existing one) per the Content IG's
   `HRDMeasure` definition.
 - HRD output is produced only for input formats that actually carry
-  HRD columns (e.g., the original WA Health format and the WA Health
-  Variable Catalog format). A format without HRD columns (e.g., the
-  KC multi-hospital format) yields bed-capacity output only; this is
-  expected, not an error.
+  HRD columns (e.g., the original WA Health format and the "2026-04-30
+  WA Health dictionary from KC"). A format without HRD columns (e.g.,
+  "KC multi-hospital from MFT 2026-05-11") yields bed-capacity output
+  only; this is expected, not an error.
 - Each measure domain MUST have its own test CSV fixtures and
   validation targets.
 - Do not add measure domains beyond bed capacity and HRD without a
