@@ -19,7 +19,7 @@ python3 convert.py input.csv
 ## Usage
 
 ```
-python3 convert.py input.csv [--config config.json] [--output-dir ./output] [--fhir-server URL]
+python3 convert.py input.csv [--config config.json] [--output-dir ./output] [--fhir-server URL] [--bundles-mrs-only]
 ```
 
 | Flag | Default | Description |
@@ -28,6 +28,7 @@ python3 convert.py input.csv [--config config.json] [--output-dir ./output] [--f
 | `--config` | `config.json` | Path to configuration file |
 | `--output-dir` | `./output` | Directory for generated JSON files |
 | `--fhir-server` | *(none)* | FHIR server base URL (e.g. `http://localhost:8080/fhir`) |
+| `--bundles-mrs-only` | *(off)* | Write only the Bundle and `MeasureReport.json` for each facility; skip the rarely-changing `Organization.json`, `Device.json`, `Location.json`. Affects local files only — `--fhir-server` persistence is unchanged. |
 
 The input CSV layout is **auto-detected from its header row** — see [Input CSV formats](#input-csv-formats). An unrecognized header is a hard error: the converter exits without writing any output.
 
@@ -36,9 +37,11 @@ The input CSV layout is **auto-detected from its header row** — see [Input CSV
 For each data row the script produces:
 
 - **Bundle** — `{output-dir}/{date}/{facility_name}.{date}.BedCapacity.json`
-- **Individual resources** — `Organization.json`, `Device.json`, `MeasureReport.json`, `Location.json` in the same date subdirectory (useful for debugging; for a multi-facility input file these are overwritten per row, so the bundle file is the authoritative artifact)
+- **Individual resources** — `Organization.json`, `Device.json`, `MeasureReport.json`, `Location.json` in a per-facility subdirectory `{output-dir}/{date}/{facility_name}/` (useful for debugging)
 
-Output is organized into per-date subdirectories under `--output-dir`. A multi-facility input file produces one Bundle per (facility, reporting date) row; filenames stay unambiguous because both the facility name and the date are in the name.
+Output is organized first by reporting date, then by facility: `{output-dir}/{date}/` holds the Bundle file(s) for that date and one subdirectory per facility, and `{output-dir}/{date}/{facility_name}/` holds that facility's individual resources. A multi-facility input file produces one Bundle per (facility, reporting date) row; Bundle filenames stay unambiguous because both the facility name and the date are in the name, and each facility's individual resources are isolated in its own subdirectory (so processing a multi-facility file never overwrites one facility's individual resources with another's).
+
+With `--bundles-mrs-only`, only the Bundle file(s) and each facility's `MeasureReport.json` are written; the rarely-changing `Organization.json`, `Device.json`, and `Location.json` files are skipped. This affects local files only — what gets persisted with `--fhir-server` is unchanged.
 
 ## FHIR server persistence
 

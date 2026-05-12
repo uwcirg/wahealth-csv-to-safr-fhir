@@ -828,6 +828,10 @@ def main():
     parser.add_argument("--output-dir", default="./output", help="Output directory (default: ./output)")
     parser.add_argument("--fhir-server", default=None, metavar="URL",
                         help="FHIR server base URL to persist resources to (e.g. http://localhost:8080/fhir)")
+    parser.add_argument("--bundles-mrs-only", action="store_true",
+                        help="Write only the Bundle and MeasureReport.json for each facility locally; "
+                             "skip the rarely-changing Organization.json, Device.json, and Location.json "
+                             "files. Does not change what is persisted to a --fhir-server.")
     args = parser.parse_args()
 
     # --- Set up logging ---
@@ -878,9 +882,15 @@ def main():
         facility_name = sanitize_filename(record.get("facility_name") or f"facility_{i}")
         date_str = reporting_date.strftime("%Y-%m-%d")
 
-        # Create date subdirectory
+        # Create the date subdirectory (holds Bundle files) and the per-facility
+        # subdirectory (holds that facility's individual resources). Individual
+        # resources are never written loose in the date directory, so processing a
+        # multi-facility (or multi-row) input file never overwrites one facility's
+        # resources with another's.
         date_dir = os.path.join(args.output_dir, date_str)
         os.makedirs(date_dir, exist_ok=True)
+        facility_dir = os.path.join(date_dir, facility_name)
+        os.makedirs(facility_dir, exist_ok=True)
 
         # Write bundle
         bundle_filepath = os.path.join(date_dir, f"{facility_name}.{date_str}.BedCapacity.json")
@@ -888,11 +898,15 @@ def main():
             json.dump(bundle, f, indent=2)
         logger.info("Generated %s", bundle_filepath)
 
-        # Write individual resources for debugging
+        # Write individual resources into the per-facility subdirectory (useful for
+        # debugging). With --bundles-mrs-only, only the MeasureReport is written; the
+        # rarely-changing Organization/Device/Location files are skipped.
         for entry in bundle["entry"]:
             resource = entry["resource"]
             res_type = resource["resourceType"]
-            res_filepath = os.path.join(date_dir, f"{res_type}.json")
+            if args.bundles_mrs_only and res_type != "MeasureReport":
+                continue
+            res_filepath = os.path.join(facility_dir, f"{res_type}.json")
             with open(res_filepath, "w") as f:
                 json.dump(resource, f, indent=2)
             logger.info("Generated %s", res_filepath)

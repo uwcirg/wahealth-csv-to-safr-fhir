@@ -19,9 +19,9 @@ Sync Impact Report
   - .specify/templates/tasks-template.md — ✅ no updates needed
   - .specify/templates/commands/ — ✅ no command files exist
 - Follow-up TODOs:
-  - README.md — ⚠ pending: update the "Output" section to describe the
-    per-facility subdirectory layout and the new `--bundles-mrs-only`
-    flag once the corresponding feature is implemented.
+  - README.md — ✅ resolved: feature 009-per-facility-output-layout
+    updated the "Output" section and options table to describe the
+    per-facility subdirectory layout and the `--bundles-mrs-only` flag.
 -->
 
 # WA Health SAFR CSV-to-FHIR Converter Constitution

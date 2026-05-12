@@ -65,10 +65,13 @@ NHSN_SAFR_IG_VERSION=$(grep -oP 'NHSN_SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py
 
 ### Step 3: Validate FHIR Bundles
 
-Run the FHIR validator against all generated output:
+Run the FHIR validator against all generated output. Use `find` (not
+`output/**/*.json`) so the validator reaches the per-facility subdirectory files
+at `output/{date}/{facility}/*.json` — `**` only expands recursively when
+`shopt -s globstar` is set:
 
 ```bash
-java -jar validator_cli.jar output/**/*.json \
+java -jar validator_cli.jar $(find output -name '*.json') \
   -version 4.0.1 \
   -ig hl7.fhir.us.safr#$SAFR_IG_VERSION \
   -ig https://safr-ci.nhsnlink.org/package.tgz
