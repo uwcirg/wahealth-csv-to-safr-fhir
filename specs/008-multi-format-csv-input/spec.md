@@ -170,9 +170,10 @@ files written.
   missing `Reporting Date`, or a dictionary-format file missing `facility` → the
   converter reports which required column is absent and stops, rather than
   emitting rows with zeroed or blank fields.
-- **Header-only file**: a recognized format with header row but no data rows →
-  same behavior as today for `*column-labels-only*` fixtures (recognized, no
-  Bundles produced, no error).
+- **Header-only file**: a recognized format with a header row but no data rows →
+  errors with a clear "CSV file contains no data rows" message and exits non-zero,
+  exactly as today. (This is why `*column-labels-only*` fixtures are excluded from
+  the CI conversion loop — they exist to pin column names, not to be converted.)
 - **Multi-hospital file referencing an unconfigured facility**: a facility name in
   an MFT-format row that has no config entry (no registry, or not found in one) →
   the converter still emits a Bundle for that row, building a sparsely-populated
@@ -243,6 +244,12 @@ files written.
   Bundle (including those for unconfigured facilities) MUST still pass the HL7
   FHIR validator with zero project-introduced errors — the sparse resources are
   structurally conformant, just under-populated.
+- **FR-008b**: When persisting to a FHIR server (`--fhir-server`), a multi-facility
+  input file MUST upsert each distinct facility's Organization and Location
+  separately (resolved per FR-008), rather than reusing one Organization/Location
+  for the whole file; the Device is upserted once per run. Deterministic upsert
+  keys use the stable facility identifier from FR-007 (the placeholder
+  "unregistered facility" identifier for facilities without a config entry).
 - **FR-009**: The system MUST parse each format's reporting-date convention
   (`MM/DD/YYYY` for the original format; ISO `YYYY-MM-DD` for the others) into a
   normalized internal date. Output filenames and FHIR `period` dates remain

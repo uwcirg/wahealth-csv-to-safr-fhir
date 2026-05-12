@@ -111,7 +111,7 @@ distinct reporting-date subdirectories, each carrying that facility's identity
 |---|---|
 | Header matches no format | Log an error naming all three `display_name`s; exit non-zero; **write no output files / directories**. |
 | Header matches a format but a required mapped column is missing | Log which column is missing for which format; exit non-zero; write no output. |
-| Recognized format, header row only, no data rows | Same as today's `*column-labels-only*` handling: recognized, no Bundles produced, no error. |
+| Recognized format, header row only, no data rows | Error ("CSV file contains no data rows"), exit non-zero — unchanged. `*column-labels-only*` fixtures are therefore excluded from the CI conversion loop. |
 | Empty file | Error ("CSV file contains no data rows"), exit non-zero — unchanged. |
 
 A recognized format **never** produces a Bundle whose counts are zero merely
