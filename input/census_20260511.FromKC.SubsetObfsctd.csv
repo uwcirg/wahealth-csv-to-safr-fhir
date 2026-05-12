@@ -1,7 +1,7 @@
 Facility,Contact,Reporting Date,Created On,ICU Adult Occupancy,ICU Pediatric Occupancy,Acute Adult Occupancy,Acute Pediatric Occupancy,ICU Adult Capacity,ICU Pediatric Capacity,Acute Adult Capacity,Acute Pediatric Capacity,Neonatal ICU Beds Currently in Use,Neonatal ICU Beds Capacity,Nursery Current Occupancy,Nursery Staffed Bed Capacity,Surge Beds Currently in Use,Surge Beds Capacity,Adult Other Inpatient Beds Currently in Use,Adult Other Inpatient Beds Capacity,Previous Day Adult ED Visits,Previous Day Pediatric ED Visits
 "Catholic Health St. Augustine Hospital","Julia Louis-Dryfus","2026-04-26",2026-04-27 13:55:02.0000000,6,0,102,0,10,0,120,0,0,0,2,8,0,4,17,19,92,4
 "Catholic Health St. Ebe Hospital","Julia Louis-Dryfus","2026-04-26",2026-04-27 13:55:58.0000000,2,0,21,0,4,0,23,0,0,0,1,2,0,6,2,2,28,6
-"Nordic Issaquah","Becky Doe","2026-04-24",2026-04-27 14:58:46.0000000,2,0,87,0,27,0,107,0,0,0,17,21,2,2,0,0,97,11
+"Nordic Foothillville","Becky Doe","2026-04-24",2026-04-27 14:58:46.0000000,2,0,87,0,27,0,107,0,0,0,17,21,2,2,0,0,97,11
 "Seaside Medical Center","Amy Singleton","2026-04-27",2026-04-27 16:51:15.0000000,100,0,304,4,109,0,353,4,0,0,0,0,0,0,0,0,180,3
 "AMC - University Triangle","Amy Singleton","2026-04-27",2026-04-27 16:51:43.0000000,71,0,273,0,85,0,286,0,38,45,0,0,0,0,21,47,97,1
 "AMC - Southeast","Amy Singleton","2026-04-27",2026-04-27 16:52:21.0000000,8,0,117,1,15,0,162,1,0,6,0,0,0,0,0,0,102,1

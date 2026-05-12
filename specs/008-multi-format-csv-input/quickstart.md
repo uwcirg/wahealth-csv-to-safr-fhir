@@ -61,7 +61,7 @@ OrgIDs or addresses. Provide those in `config.json` under a new optional
   `{"system": "urn:wahealth:csv-to-safr:unregistered-facility", "value": "<slugified-facility-name>"}`.
   You'll see a warning like:
   ```
-  WARNING Facility 'Nordic Issaquah' not in config 'facilities' registry; emitting
+  WARNING Facility 'Nordic Foothillville' not in config 'facilities' registry; emitting
           sparsely-populated Organization/Location with a placeholder identifier
           (urn:wahealth:csv-to-safr:unregistered-facility|nordic-issaquah)
   ```

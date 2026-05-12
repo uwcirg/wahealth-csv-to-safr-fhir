@@ -121,7 +121,7 @@ class TestParseRowsKcMft(unittest.TestCase):
         self.assertEqual(len(records), 9)
         names = {r["facility_name"] for r in records}
         self.assertIn("Seaside Medical Center", names)
-        self.assertIn("Nordic Issaquah", names)
+        self.assertIn("Nordic Foothillville", names)
         # Seaside appears for three distinct reporting dates
         seaside_dates = sorted(r["reporting_date"] for r in records if r["facility_name"] == "Seaside Medical Center")
         self.assertEqual(len(seaside_dates), 3)
@@ -228,22 +228,22 @@ class TestResolveFacilityProfile(unittest.TestCase):
         self.assertEqual(profile["organization"]["nhsn_org_id"], "10000001")
 
     def test_unregistered_facility_gets_sparse_profile(self):
-        record = {"facility_name": "Nordic Issaquah"}
+        record = {"facility_name": "Nordic Foothillville"}
         profile, unregistered = resolve_facility_profile(record, self.config, self.kc_descriptor)
         self.assertTrue(unregistered)
-        self.assertEqual(profile["organization"], {"name": "Nordic Issaquah"})
-        self.assertEqual(profile["location"]["name"], "Nordic Issaquah")
+        self.assertEqual(profile["organization"], {"name": "Nordic Foothillville"})
+        self.assertEqual(profile["location"]["name"], "Nordic Foothillville")
 
     def test_unregistered_organization_uses_placeholder_nhsn_id(self):
         # Build the resource and check the identifier is NHSN-system with an
         # obviously-synthetic value (so it satisfies the SAFR profile's required slice).
         from convert import build_organization_resource
-        record = {"facility_name": "Nordic Issaquah"}
+        record = {"facility_name": "Nordic Foothillville"}
         profile, unregistered = resolve_facility_profile(record, self.config, self.kc_descriptor)
         org = build_organization_resource(profile, unregistered)
         ident = org["identifier"][0]
         self.assertEqual(ident["system"], NHSN_SYSTEM)
-        self.assertEqual(ident["value"], f"{UNREGISTERED_ORG_ID_PREFIX}nordic-issaquah")
+        self.assertEqual(ident["value"], f"{UNREGISTERED_ORG_ID_PREFIX}nordic-foothillville")
         self.assertNotIn("nhsn_org_id", profile["organization"])  # config OrgID not used
 
 
