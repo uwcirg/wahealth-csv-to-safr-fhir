@@ -10,3 +10,9 @@ __pycache__/
 # Generated output
 output/
 log/
+
+# HL7 FHIR validator (downloaded on demand; ~180 MB — do not commit)
+validator_cli.jar
+
+# Windows / WSL "mark of the web" sidecar files
+*:Zone.Identifier

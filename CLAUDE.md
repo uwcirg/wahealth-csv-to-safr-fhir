@@ -37,14 +37,14 @@ Python 3 (stdlib only for runtime; dev tools use pip): Follow standard conventio
 
 ## LLM Validation Pipeline
 
-LLM agents **MUST** run the following four-step FHIR validation pipeline before completing any development work that touches `convert.py`, configuration, or FHIR output. This matches the CI pipeline in `.github/workflows/ci.yml` exactly.
+LLM agents **MUST** run the following four-step FHIR validation pipeline before completing any development work that touches `convert.py`, `csv_formats.py`, configuration, or FHIR output. This matches the CI pipeline in `.github/workflows/ci.yml` exactly.
 
 ### Step 1: Convert test fixtures
 
-Run the converter against all test CSV fixtures, excluding column-labels-only files (which contain headers but no data rows):
+Run the converter against every CSV fixture in `input/` (one canonical fixture per supported input format), excluding `*column-labels-only*` files (header-only column listings, not data):
 
 ```bash
-for csv in input/*.BedCapacity.csv; do
+for csv in input/*.csv; do
   case "$csv" in
     *column-labels-only*) continue ;;
   esac
