@@ -1,22 +1,16 @@
 <!--
 Sync Impact Report
-- Version change: 1.5.0 → 1.6.0
+- Version change: 1.6.0 → 1.7.0
 - Modified principles:
-  - "Scope — Bed Capacity and HRD Surveillance" — clarified that HRD
-    processing applies only to input formats that actually carry HRD
-    columns; measure-domain scope is unchanged.
-  - "Validation-Driven Testing" — added rule requiring at least one
-    canonical test fixture per supported input CSV format.
-  - "Clear, Predictable Output" — added rule that multi-facility input
-    files are supported and each (facility, reporting date) row yields
-    its own Bundle.
-- Added sections:
-  - "### Multi-Format CSV Input" under Core Principles — establishes
-    that the converter must accept the three supported hospital CSV
-    layouts (original WA Health format; the "2026-04-30 WA Health
-    dictionary from KC"; and "KC multi-hospital from MFT 2026-05-11")
-    via header-based format detection that normalizes to one internal
-    row model.
+  - "Clear, Predictable Output" — replaced the "individual resources
+    alongside the Bundle" rule with a per-facility subdirectory layout
+    (`output/{YYYY-MM-DD}/{facility_name}/`) so multi-facility input
+    files no longer overwrite one facility's individual resources with
+    another's; added a runtime flag rule requiring an opt-in
+    `--bundles-mrs-only` mode that emits only the Bundle and
+    MeasureReport artifacts and skips the rarely-changing
+    Organization / Device / Location files.
+- Added sections: None
 - Removed sections: None
 - Templates requiring updates:
   - .specify/templates/plan-template.md — ✅ no updates needed
@@ -24,7 +18,10 @@ Sync Impact Report
   - .specify/templates/spec-template.md — ✅ no updates needed
   - .specify/templates/tasks-template.md — ✅ no updates needed
   - .specify/templates/commands/ — ✅ no command files exist
-- Follow-up TODOs: None
+- Follow-up TODOs:
+  - README.md — ✅ resolved: feature 009-per-facility-output-layout
+    updated the "Output" section and options table to describe the
+    per-facility subdirectory layout and the `--bundles-mrs-only` flag.
 -->
 
 # WA Health SAFR CSV-to-FHIR Converter Constitution
@@ -398,13 +395,29 @@ to find, review, and troubleshoot submissions. Output structure is
 part of the user experience.
 
 **Rules:**
-- Bundle files: `{facility_name}.{reporting_date}.BedCapacity.json`
-- Individual resources: `Organization.json`, `Device.json`,
-  `MeasureReport.json`, `Location.json` alongside the Bundle.
-- Output organized by date: `output/{YYYY-MM-DD}/`.
+- Output is organized first by reporting date, then by facility:
+  `output/{YYYY-MM-DD}/` holds the Bundle file(s) for that date, and
+  `output/{YYYY-MM-DD}/{facility_name}/` holds that facility's
+  individual resources.
+- Bundle files: `output/{YYYY-MM-DD}/{facility_name}.{reporting_date}.BedCapacity.json`.
+- Individual resources — `Organization.json`, `Device.json`,
+  `MeasureReport.json`, `Location.json` — MUST be written into the
+  per-facility subdirectory `output/{YYYY-MM-DD}/{facility_name}/`,
+  never directly into the date directory. This guarantees that
+  processing a multi-facility (or multi-row) input file never
+  overwrites one facility's individual resources with another's; the
+  facility owning a given resource file is unambiguous from its path.
 - Multi-facility input files produce one Bundle per (facility,
-  reporting date) row; filenames remain unambiguous because the
-  facility name and reporting date are both in the name.
+  reporting date) row; Bundle filenames remain unambiguous because the
+  facility name and reporting date are both in the name, and each
+  facility's individual resources are isolated in its own subdirectory.
+- The converter MUST provide an opt-in runtime flag
+  `--bundles-mrs-only` that restricts output to the Bundle and the
+  standalone `MeasureReport.json` artifacts and skips the
+  rarely-changing `Organization.json`, `Device.json`, and
+  `Location.json` files. The default (flag absent) writes the full
+  set. The flag MUST be documented in `README.md` and surfaced in
+  `--help`.
 - JSON MUST be pretty-printed (indented) for human readability.
 - Logging to both console (for immediate feedback) and timestamped
   file (for audit trail) in `log/`.
@@ -502,4 +515,4 @@ Split only when complexity demands it.
   exception and the reasoning in the relevant spec or PR — do not
   silently deviate.
 
-**Version**: 1.6.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-05-11
+**Version**: 1.7.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-05-12
