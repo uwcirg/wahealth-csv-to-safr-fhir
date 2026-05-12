@@ -14,7 +14,7 @@ jobs:
         with:
           python-version: "3.x"
       - run: pip install ruff
-      - run: ruff check convert.py
+      - run: ruff check convert.py csv_formats.py tests
 
   fhir-validate:
     name: FHIR Validation
@@ -40,9 +40,10 @@ jobs:
           fi
       - name: Run converter against test fixtures
         run: |
-          # To add new test fixtures, place a CSV in input/ with the *.BedCapacity.csv naming convention.
-          # Files matching *column-labels-only* are excluded (headers only, no data rows).
-          for csv in input/*.BedCapacity.csv; do
+          # Convert every CSV fixture in input/ (one canonical fixture per supported
+          # input format). Files matching *column-labels-only* are excluded — they
+          # are header-only column listings, not data.
+          for csv in input/*.csv; do
             case "$csv" in
               *column-labels-only*) continue ;;
             esac
@@ -63,7 +64,10 @@ jobs:
           # Known upstream errors are documented in known-validation-issues.md.
           # We filter those and fail only on errors introduced by this project.
           set +e
-          VALIDATOR_OUTPUT=$(java -jar validator_cli.jar output/**/*.json \
+          # Use `find` (not `output/**/*.json`) so the validator reaches the
+          # per-facility subdirectory files at output/{date}/{facility}/*.json —
+          # `**` only expands recursively when `shopt -s globstar` is set.
+          VALIDATOR_OUTPUT=$(java -jar validator_cli.jar $(find output -name '*.json') \
             -version 4.0.1 \
             -ig hl7.fhir.us.safr#$SAFR_IG_VERSION \
             -ig https://safr-ci.nhsnlink.org/package.tgz 2>&1)

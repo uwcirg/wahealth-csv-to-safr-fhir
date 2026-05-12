@@ -1,0 +1,1718 @@
+[
+  {
+    "file": "Pilot_Hospital.2025-10-20.BedCapacity.json",
+    "bundle": {
+      "resourceType": "Bundle",
+      "meta": {
+        "profile": [
+          "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-measurereport-bundle"
+        ]
+      },
+      "type": "collection",
+      "entry": [
+        {
+          "resource": {
+            "resourceType": "Organization",
+            "meta": {
+              "profile": [
+                "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-submitting-organization",
+                "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-organization"
+              ]
+            },
+            "identifier": [
+              {
+                "system": "https://www.cdc.gov/nhsn/OrgID",
+                "value": "YOUR_NHSN_ORG_ID"
+              }
+            ],
+            "active": true,
+            "type": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                    "code": "prov",
+                    "display": "Healthcare Provider"
+                  }
+                ]
+              }
+            ],
+            "name": "Your Hospital Name",
+            "telecom": [
+              {
+                "system": "phone",
+                "value": "+1-555-000-0000",
+                "use": "work"
+              }
+            ],
+            "address": [
+              {
+                "line": [
+                  "123 Main Street"
+                ],
+                "city": "City",
+                "state": "WA",
+                "postalCode": "98112",
+                "country": "USA"
+              }
+            ]
+          }
+        },
+        {
+          "resource": {
+            "resourceType": "Device",
+            "meta": {
+              "profile": [
+                "http://hl7.org/fhir/uv/crmi/StructureDefinition/crmi-softwaresystemdevice|1.0.0"
+              ]
+            },
+            "manufacturer": "safr-csv-fhir",
+            "deviceName": [
+              {
+                "name": "safr-csv-fhir",
+                "type": "manufacturer-name"
+              }
+            ],
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/software-system-type-codes",
+                  "code": "tooling"
+                }
+              ]
+            },
+            "version": [
+              {
+                "value": "1.0.0"
+              }
+            ],
+            "identifier": [
+              {
+                "system": "urn:oid:2.16.840.1.113883.3.2",
+                "value": "safr-csv-fhir"
+              }
+            ]
+          }
+        },
+        {
+          "resource": {
+            "resourceType": "MeasureReport",
+            "meta": {
+              "profile": [
+                "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/indv-measurereport-deqm"
+              ]
+            },
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-measureScoring",
+                "valueCodeableConcept": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-scoring",
+                      "code": "continuous-variable",
+                      "display": "Continuous Variable"
+                    }
+                  ]
+                }
+              },
+              {
+                "url": "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-dataLocation",
+                "valueReference": {
+                  "reference": "UUID",
+                  "display": "Your Hospital Main Campus"
+                }
+              }
+            ],
+            "status": "complete",
+            "type": "individual",
+            "measure": "http://www.cdc.gov/nhsn/fhirportal/safr/ig/Measure/BedCapacityMeasure|1.0.0",
+            "subject": {
+              "reference": "UUID",
+              "display": "Your Hospital Main Campus"
+            },
+            "reporter": {
+              "reference": "UUID",
+              "display": "Your Hospital Name"
+            },
+            "period": {
+              "start": "2025-10-20T00:00:00+00:00",
+              "end": "2025-10-20T23:59:59+00:00"
+            },
+            "improvementNotation": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/measure-improvement-notation",
+                  "code": "increase",
+                  "display": "Increased score indicates improvement"
+                }
+              ]
+            },
+            "group": [
+              {
+                "id": "AdultICUOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112575-6"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultICUOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 4
+                  }
+                ]
+              },
+              {
+                "id": "AdultICUUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112574-9"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultICUUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "PedsICUOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112562-4"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsICUOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 3
+                  }
+                ]
+              },
+              {
+                "id": "PedsICUUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112561-6"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsICUUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "AdultNonICUOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112572-3"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultNonICUOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 52
+                  }
+                ]
+              },
+              {
+                "id": "AdultNonICUUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112571-5"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultNonICUUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 2
+                  }
+                ]
+              },
+              {
+                "id": "PedsNonICUOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112559-0"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsNonICUOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 4
+                  }
+                ]
+              },
+              {
+                "id": "PedsNonICUUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112558-2"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsNonICUUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "NICUTotalOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112545-9"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "NICUTotalOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 2
+                  }
+                ]
+              },
+              {
+                "id": "NICUTotalUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112544-2"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "NICUTotalUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "NurseryOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112535-0"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "NurseryOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "NurseryUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112534-3"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "NurseryUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "SurgeActiveTotalOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112525-1"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "SurgeActiveTotalOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "SurgeActiveTotalUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112524-4"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "SurgeActiveTotalUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "AdultEDCensus-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112512-9"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultEDCensus-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 105
+                  }
+                ]
+              },
+              {
+                "id": "PedsEDTotalCensus-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112510-3"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsEDTotalCensus-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "TotalEDCensus-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112508-7"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "TotalEDCensus-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 105
+                  }
+                ]
+              },
+              {
+                "id": "AllBedsOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112579-8"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AllBedsOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 65
+                  }
+                ]
+              },
+              {
+                "id": "AllBedsUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112578-0"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AllBedsUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 2
+                  }
+                ]
+              },
+              {
+                "id": "AdultTotalOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112577-2"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultTotalOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 56
+                  }
+                ]
+              },
+              {
+                "id": "AdultTotalUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112576-4"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultTotalUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 2
+                  }
+                ]
+              },
+              {
+                "id": "PedsTotalOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112564-0"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsTotalOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 7
+                  }
+                ]
+              },
+              {
+                "id": "PedsTotalUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112563-2"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsTotalUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "SpecialtyTotalOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112551-7"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "SpecialtyTotalOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 2
+                  }
+                ]
+              },
+              {
+                "id": "SpecialtyTotalUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112550-9"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "SpecialtyTotalUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "resource": {
+            "resourceType": "Location",
+            "meta": {
+              "profile": [
+                "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-location"
+              ]
+            },
+            "identifier": [
+              {
+                "system": "urn:oid:2.16.840.1.113883.3.1",
+                "value": "FACILITY-ID"
+              }
+            ],
+            "status": "active",
+            "name": "Your Hospital Main Campus",
+            "description": "Main hospital campus",
+            "mode": "instance",
+            "type": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                    "code": "HOSP",
+                    "display": "Hospital"
+                  }
+                ]
+              }
+            ],
+            "address": {
+              "line": [
+                "123 Main Street"
+              ],
+              "city": "City",
+              "state": "WA",
+              "postalCode": "98112",
+              "country": "USA"
+            },
+            "physicalType": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/location-physical-type",
+                  "version": "2.0.1",
+                  "code": "bu",
+                  "display": "Building"
+                }
+              ]
+            },
+            "managingOrganization": {
+              "reference": "UUID"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "file": "Pilot_Hospital.2025-10-21.BedCapacity.json",
+    "bundle": {
+      "resourceType": "Bundle",
+      "meta": {
+        "profile": [
+          "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-measurereport-bundle"
+        ]
+      },
+      "type": "collection",
+      "entry": [
+        {
+          "resource": {
+            "resourceType": "Organization",
+            "meta": {
+              "profile": [
+                "http://hl7.org/fhir/us/safr/StructureDefinition/us-safr-submitting-organization",
+                "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-organization"
+              ]
+            },
+            "identifier": [
+              {
+                "system": "https://www.cdc.gov/nhsn/OrgID",
+                "value": "YOUR_NHSN_ORG_ID"
+              }
+            ],
+            "active": true,
+            "type": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+                    "code": "prov",
+                    "display": "Healthcare Provider"
+                  }
+                ]
+              }
+            ],
+            "name": "Your Hospital Name",
+            "telecom": [
+              {
+                "system": "phone",
+                "value": "+1-555-000-0000",
+                "use": "work"
+              }
+            ],
+            "address": [
+              {
+                "line": [
+                  "123 Main Street"
+                ],
+                "city": "City",
+                "state": "WA",
+                "postalCode": "98112",
+                "country": "USA"
+              }
+            ]
+          }
+        },
+        {
+          "resource": {
+            "resourceType": "Device",
+            "meta": {
+              "profile": [
+                "http://hl7.org/fhir/uv/crmi/StructureDefinition/crmi-softwaresystemdevice|1.0.0"
+              ]
+            },
+            "manufacturer": "safr-csv-fhir",
+            "deviceName": [
+              {
+                "name": "safr-csv-fhir",
+                "type": "manufacturer-name"
+              }
+            ],
+            "type": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/software-system-type-codes",
+                  "code": "tooling"
+                }
+              ]
+            },
+            "version": [
+              {
+                "value": "1.0.0"
+              }
+            ],
+            "identifier": [
+              {
+                "system": "urn:oid:2.16.840.1.113883.3.2",
+                "value": "safr-csv-fhir"
+              }
+            ]
+          }
+        },
+        {
+          "resource": {
+            "resourceType": "MeasureReport",
+            "meta": {
+              "profile": [
+                "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/indv-measurereport-deqm"
+              ]
+            },
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-measureScoring",
+                "valueCodeableConcept": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/measure-scoring",
+                      "code": "continuous-variable",
+                      "display": "Continuous Variable"
+                    }
+                  ]
+                }
+              },
+              {
+                "url": "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-dataLocation",
+                "valueReference": {
+                  "reference": "UUID",
+                  "display": "Your Hospital Main Campus"
+                }
+              }
+            ],
+            "status": "complete",
+            "type": "individual",
+            "measure": "http://www.cdc.gov/nhsn/fhirportal/safr/ig/Measure/BedCapacityMeasure|1.0.0",
+            "subject": {
+              "reference": "UUID",
+              "display": "Your Hospital Main Campus"
+            },
+            "reporter": {
+              "reference": "UUID",
+              "display": "Your Hospital Name"
+            },
+            "period": {
+              "start": "2025-10-21T00:00:00+00:00",
+              "end": "2025-10-21T23:59:59+00:00"
+            },
+            "improvementNotation": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/measure-improvement-notation",
+                  "code": "increase",
+                  "display": "Increased score indicates improvement"
+                }
+              ]
+            },
+            "group": [
+              {
+                "id": "AdultICUOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112575-6"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultICUOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 4
+                  }
+                ]
+              },
+              {
+                "id": "AdultICUUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112574-9"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultICUUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "PedsICUOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112562-4"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsICUOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 3
+                  }
+                ]
+              },
+              {
+                "id": "PedsICUUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112561-6"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsICUUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 1
+                  }
+                ]
+              },
+              {
+                "id": "AdultNonICUOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112572-3"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultNonICUOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 50
+                  }
+                ]
+              },
+              {
+                "id": "AdultNonICUUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112571-5"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultNonICUUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "PedsNonICUOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112559-0"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsNonICUOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 7
+                  }
+                ]
+              },
+              {
+                "id": "PedsNonICUUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112558-2"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsNonICUUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 1
+                  }
+                ]
+              },
+              {
+                "id": "NICUTotalOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112545-9"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "NICUTotalOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 9
+                  }
+                ]
+              },
+              {
+                "id": "NICUTotalUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112544-2"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "NICUTotalUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 1
+                  }
+                ]
+              },
+              {
+                "id": "NurseryOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112535-0"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "NurseryOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 11
+                  }
+                ]
+              },
+              {
+                "id": "NurseryUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112534-3"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "NurseryUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 1
+                  }
+                ]
+              },
+              {
+                "id": "SurgeActiveTotalOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112525-1"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "SurgeActiveTotalOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 13
+                  }
+                ]
+              },
+              {
+                "id": "SurgeActiveTotalUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112524-4"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "SurgeActiveTotalUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 1
+                  }
+                ]
+              },
+              {
+                "id": "AdultEDCensus-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112512-9"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultEDCensus-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 50
+                  }
+                ]
+              },
+              {
+                "id": "PedsEDTotalCensus-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112510-3"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsEDTotalCensus-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 25
+                  }
+                ]
+              },
+              {
+                "id": "TotalEDCensus-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112508-7"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "TotalEDCensus-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 75
+                  }
+                ]
+              },
+              {
+                "id": "AllBedsOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112579-8"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AllBedsOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 112
+                  }
+                ]
+              },
+              {
+                "id": "AllBedsUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112578-0"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AllBedsUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 6
+                  }
+                ]
+              },
+              {
+                "id": "AdultTotalOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112577-2"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultTotalOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 54
+                  }
+                ]
+              },
+              {
+                "id": "AdultTotalUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112576-4"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "AdultTotalUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 0
+                  }
+                ]
+              },
+              {
+                "id": "PedsTotalOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112564-0"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsTotalOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 10
+                  }
+                ]
+              },
+              {
+                "id": "PedsTotalUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112563-2"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "PedsTotalUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 2
+                  }
+                ]
+              },
+              {
+                "id": "SpecialtyTotalOccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112551-7"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "SpecialtyTotalOccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 20
+                  }
+                ]
+              },
+              {
+                "id": "SpecialtyTotalUnoccupied-bed-capacity-group",
+                "code": {
+                  "coding": [
+                    {
+                      "system": "http://loinc.org",
+                      "code": "112550-9"
+                    }
+                  ]
+                },
+                "population": [
+                  {
+                    "id": "SpecialtyTotalUnoccupied-initial-population",
+                    "code": {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+                          "code": "initial-population",
+                          "display": "Initial Population"
+                        }
+                      ]
+                    },
+                    "count": 2
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "resource": {
+            "resourceType": "Location",
+            "meta": {
+              "profile": [
+                "http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-location"
+              ]
+            },
+            "identifier": [
+              {
+                "system": "urn:oid:2.16.840.1.113883.3.1",
+                "value": "FACILITY-ID"
+              }
+            ],
+            "status": "active",
+            "name": "Your Hospital Main Campus",
+            "description": "Main hospital campus",
+            "mode": "instance",
+            "type": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+                    "code": "HOSP",
+                    "display": "Hospital"
+                  }
+                ]
+              }
+            ],
+            "address": {
+              "line": [
+                "123 Main Street"
+              ],
+              "city": "City",
+              "state": "WA",
+              "postalCode": "98112",
+              "country": "USA"
+            },
+            "physicalType": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/location-physical-type",
+                  "version": "2.0.1",
+                  "code": "bu",
+                  "display": "Building"
+                }
+              ]
+            },
+            "managingOrganization": {
+              "reference": "UUID"
+            }
+          }
+        }
+      ]
+    }
+  }
+]

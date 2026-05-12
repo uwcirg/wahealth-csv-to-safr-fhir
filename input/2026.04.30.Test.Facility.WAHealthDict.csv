@@ -1,0 +1,3 @@
+facility,county,reportingday,created_on,all_inpatient_cap,all_inpatient_occ,adult_acute_cap,adult_acute_occ,adult_icu_cap,adult_icu_occ,ped_acute_cap,ped_acute_occ,ped_icu_cap,ped_icu_occ,neon_icu_cap,neon_icu_occ,nursery_cap,nursery_occ,surge_cap,surge_occ,other_cap,other_occ,prevd_adult_ed,prevd_ped_ed,covid_hospitalized,covid_adm_age_0_to_4,flu_hospitalized,rsv_hospitalized
+Pilot Dictionary Hospital,King,2026-04-29,2026-04-30,888,777,60,40,30,20,15,8,10,5,8,3,12,6,5,2,10,4,50,10,11,1,2,3
+Pilot Dictionary Hospital,King,2026-04-30,2026-05-01,800,700,55,45,28,18,14,7,9,4,7,2,11,5,4,1,9,3,60,12,9,0,1,2

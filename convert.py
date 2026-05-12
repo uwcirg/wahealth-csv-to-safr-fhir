@@ -7,8 +7,19 @@ Usage:
 Before first use, copy config.example.json to config.json and fill in your
 hospital's NHSN Org ID, name, address, phone, and location details.
 
-Outputs one JSON Bundle per CSV row to the output directory, named:
+The input CSV layout is auto-detected from its header row. Three layouts are
+supported (see csv_formats.SUPPORTED_FORMATS): the original WA Health format, the
+"2026-04-30 WA Health dictionary from KC" schema, and the multi-facility
+"KC multi-hospital from MFT 2026-05-11" format. An unrecognized header is a hard
+error — the converter exits without writing any output.
+
+Outputs one JSON Bundle per data row to the output directory, named:
     {facility_name}.{reporting_date}.BedCapacity.json
+For a multi-facility input file, every (facility, reporting date) row produces
+its own Bundle. When a facility named in a multi-facility file has no entry in
+config.json's optional `facilities` registry, a sparsely-populated Organization
+and Location are emitted with a deterministic placeholder identifier (and a
+WARNING is logged).
 
 With --fhir-server, also persists individual resources to the FHIR server
 using upsert semantics (create on first run, update on subsequent runs).
@@ -29,6 +40,16 @@ import urllib.request
 import urllib.error
 import urllib.parse
 from datetime import datetime, timezone
+
+from csv_formats import (
+    ALL_BED_AREAS,
+    UnrecognizedFormatError,
+    detect_format,
+    parse_date_flexible,
+    parse_rows,
+    slugify,
+    supported_formats_summary,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +86,17 @@ PHYSICAL_TYPE_SYSTEM = "http://terminology.hl7.org/CodeSystem/location-physical-
 SOFTWARE_TYPE_SYSTEM = "http://terminology.hl7.org/CodeSystem/software-system-type-codes"
 NHSN_SYSTEM = "https://www.cdc.gov/nhsn/OrgID"
 
+# Placeholder identity for facilities that appear in a multi-facility input file
+# but have no entry in config.json's `facilities` registry. The Organization's
+# NHSN OrgID identifier must use the real NHSN system URI (the SAFR submitting-
+# organization profile requires a slice on it), so the placeholder is encoded in
+# the *value*: "UNREGISTERED-<slugified facility name>" — deterministic, stable,
+# and obviously not a real OrgID. The config's NHSN OrgID is never used here.
+# The placeholder Location identifier uses a project-specific scheme (qicore-
+# location does not constrain the identifier system).
+UNREGISTERED_ORG_ID_PREFIX = "UNREGISTERED-"
+UNREGISTERED_FACILITY_SYSTEM = "urn:wahealth:csv-to-safr:unregistered-facility"
+
 MEASURE_URL = f"http://www.cdc.gov/nhsn/fhirportal/safr/ig/Measure/BedCapacityMeasure|{NHSN_SAFR_IG_VERSION}"
 
 MEASURE_SCORING_EXT = "http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-measureScoring"
@@ -99,27 +131,15 @@ LOINC_CODES = {
     "TotalEDCensus": "112508-7",
 }
 
-# Direct bed type mappings: (csv_prefix, occupied_code, occupied_display, unoccupied_code, unoccupied_display)
+# Direct bed-area mappings: (canonical_area, occupied_code, occupied_display, unoccupied_code, unoccupied_display)
 BED_MAPPINGS = [
-    ("icu_beds_adult", "AdultICUOccupied", "Adult ICU Census", "AdultICUUnoccupied", "Adult ICU Unoccupied"),
-    ("icu_beds_pediatric", "PedsICUOccupied", "Peds ICU Census", "PedsICUUnoccupied", "Peds ICU Unoccupied"),
-    ("acute_beds_adult", "AdultNonICUOccupied", "Adult Non-ICU Census", "AdultNonICUUnoccupied", "Adult Non-ICU Unoccupied"),
-    ("acute_beds_pediatric", "PedsNonICUOccupied", "Peds Non-ICU Census", "PedsNonICUUnoccupied", "Peds Non-ICU Unoccupied"),
-    ("neonatal_icu_beds", "NICUTotalOccupied", "NICU Total Census", "NICUTotalUnoccupied", "NICU Total Unoccupied"),
-    ("nursery_beds", "NurseryOccupied", "Nursery Census", "NurseryUnoccupied", "Nursery Unoccupied"),
-    ("beds_in_overflow_surge_expansion_areas", "SurgeActiveTotalOccupied", "Surge Total Active Census", "SurgeActiveTotalUnoccupied", "Surge Total Active Unoccupied"),
-]
-
-# All 8 bed prefixes (including other_inpatient for AllBeds totals)
-ALL_BED_PREFIXES = [
-    "icu_beds_adult",
-    "icu_beds_pediatric",
-    "acute_beds_adult",
-    "acute_beds_pediatric",
-    "neonatal_icu_beds",
-    "nursery_beds",
-    "beds_in_overflow_surge_expansion_areas",
-    "beds_in_other_inpatient_areas",
+    ("adult_icu", "AdultICUOccupied", "Adult ICU Census", "AdultICUUnoccupied", "Adult ICU Unoccupied"),
+    ("peds_icu", "PedsICUOccupied", "Peds ICU Census", "PedsICUUnoccupied", "Peds ICU Unoccupied"),
+    ("adult_acute", "AdultNonICUOccupied", "Adult Non-ICU Census", "AdultNonICUUnoccupied", "Adult Non-ICU Unoccupied"),
+    ("peds_acute", "PedsNonICUOccupied", "Peds Non-ICU Census", "PedsNonICUUnoccupied", "Peds Non-ICU Unoccupied"),
+    ("neonatal_icu", "NICUTotalOccupied", "NICU Total Census", "NICUTotalUnoccupied", "NICU Total Unoccupied"),
+    ("nursery", "NurseryOccupied", "Nursery Census", "NurseryUnoccupied", "Nursery Unoccupied"),
+    ("surge", "SurgeActiveTotalOccupied", "Surge Total Active Census", "SurgeActiveTotalUnoccupied", "Surge Total Active Unoccupied"),
 ]
 
 
@@ -131,43 +151,64 @@ def load_config(path):
         if section not in config:
             logger.error("config.json missing '%s' section.", section)
             sys.exit(1)
+    facilities = config.get("facilities")
+    if facilities is not None:
+        if not isinstance(facilities, dict):
+            logger.error("config.json 'facilities' must be an object keyed by facility name.")
+            sys.exit(1)
+        for fac_name, entry in facilities.items():
+            if not isinstance(entry, dict) or not entry.get("organization") or not entry.get("location"):
+                logger.error(
+                    "config.json 'facilities.%s' must contain non-empty 'organization' and 'location' objects.",
+                    fac_name,
+                )
+                sys.exit(1)
     return config
 
 
+def parse_reporting_date(date_str):
+    """Parse an MM/DD/YYYY date string and return a date object."""
+    return parse_date_flexible(date_str, ("%m/%d/%Y",))
+
+
 def parse_csv(path):
-    """Read CSV file, return list of row dicts."""
+    """Detect the input format from the header and return (descriptor, [NormalizedRow])."""
     with open(path, "r", newline="") as f:
         reader = csv.DictReader(f)
-        rows = list(reader)
-    if not rows:
-        logger.error("CSV file contains no data rows.")
-        sys.exit(1)
-    return rows
+        try:
+            descriptor = detect_format(reader.fieldnames)
+        except UnrecognizedFormatError:
+            logger.error(
+                "Unrecognized CSV layout. Header columns: %s. Supported formats: %s.",
+                reader.fieldnames, supported_formats_summary(),
+            )
+            sys.exit(1)
+        logger.info("Detected input format: %s", descriptor["display_name"])
+        try:
+            records = parse_rows(reader, descriptor)
+        except ValueError as e:
+            logger.error("Could not parse CSV: %s", e)
+            sys.exit(1)
+    logger.info("Parsed %d data row(s)", len(records))
+    return descriptor, records
 
 
-def safe_int(value):
-    """Parse a string to int, defaulting to 0 for empty/missing values."""
-    if value is None or value.strip() == "":
-        return 0
-    return int(value)
-
-
-def get_occupied_and_unoccupied(row, prefix):
-    """Return (occupied, unoccupied) for a bed prefix. Unoccupied is clamped to >= 0."""
-    occupied = safe_int(row.get(f"{prefix}_currently_occupied", "0"))
-    capacity = safe_int(row.get(f"{prefix}_capacity", "0"))
+def get_occupied_and_unoccupied(record, area):
+    """Return (occupied, unoccupied) for a canonical bed area. Unoccupied is clamped to >= 0."""
+    occupied = record.get(f"{area}_occ", 0)
+    capacity = record.get(f"{area}_cap", 0)
     unoccupied = max(0, capacity - occupied)
     return occupied, unoccupied
-
-
-def parse_reporting_date(date_str):
-    """Parse MM/DD/YYYY date string and return a date object."""
-    return datetime.strptime(date_str.strip(), "%m/%d/%Y").date()
 
 
 def make_uuid():
     """Generate a urn:uuid: identifier."""
     return f"urn:uuid:{uuid.uuid4()}"
+
+
+def stable_facility_key(record):
+    """A deterministic per-facility key: the GUID if the format has one, else the slugified name."""
+    return record.get("facility_guid") or slugify(record.get("facility_name", ""))
 
 
 def build_group(concept_name, display, count):
@@ -195,19 +236,19 @@ def build_group(concept_name, display, count):
     }
 
 
-def compute_groups(row):
-    """Build all MeasureReport groups from a CSV row."""
+def compute_groups(record):
+    """Build all MeasureReport groups from a normalized row."""
     groups = []
 
-    # Direct mappings (7 bed types -> occupied + unoccupied pairs)
-    for prefix, occ_code, occ_display, unocc_code, unocc_display in BED_MAPPINGS:
-        occupied, unoccupied = get_occupied_and_unoccupied(row, prefix)
+    # Direct mappings (7 bed areas -> occupied + unoccupied pairs)
+    for area, occ_code, occ_display, unocc_code, unocc_display in BED_MAPPINGS:
+        occupied, unoccupied = get_occupied_and_unoccupied(record, area)
         groups.append(build_group(occ_code, occ_display, occupied))
         groups.append(build_group(unocc_code, unocc_display, unoccupied))
 
     # ED mappings
-    adult_ed = safe_int(row.get("previous_day_adult_emergency_department_visits", "0"))
-    peds_ed = safe_int(row.get("previous_day_pediatric_emergency_department_visits", "0"))
+    adult_ed = record.get("adult_ed", 0)
+    peds_ed = record.get("peds_ed", 0)
     total_ed = adult_ed + peds_ed
 
     groups.append(build_group("AdultEDCensus", "Adult ED Total Census", adult_ed))
@@ -216,51 +257,90 @@ def compute_groups(row):
 
     # Computed aggregates
 
-    # AllBeds (all 8 prefixes including other_inpatient)
+    # AllBeds (all 8 areas including other_inpatient)
     all_occ = 0
     all_unocc = 0
-    for prefix in ALL_BED_PREFIXES:
-        occ, unocc = get_occupied_and_unoccupied(row, prefix)
+    for area in ALL_BED_AREAS:
+        occ, unocc = get_occupied_and_unoccupied(record, area)
         all_occ += occ
         all_unocc += unocc
     groups.append(build_group("AllBedsOccupied", "All Beds Census", all_occ))
     groups.append(build_group("AllBedsUnoccupied", "All Beds Unoccupied", all_unocc))
 
-    # AdultTotal (icu_adult + acute_adult)
-    icu_adult_occ, icu_adult_unocc = get_occupied_and_unoccupied(row, "icu_beds_adult")
-    acute_adult_occ, acute_adult_unocc = get_occupied_and_unoccupied(row, "acute_beds_adult")
+    # AdultTotal (adult_icu + adult_acute)
+    icu_adult_occ, icu_adult_unocc = get_occupied_and_unoccupied(record, "adult_icu")
+    acute_adult_occ, acute_adult_unocc = get_occupied_and_unoccupied(record, "adult_acute")
     groups.append(build_group("AdultTotalOccupied", "Adult Total Census", icu_adult_occ + acute_adult_occ))
     groups.append(build_group("AdultTotalUnoccupied", "Adult Total Unoccupied", icu_adult_unocc + acute_adult_unocc))
 
-    # PedsTotal (icu_peds + acute_peds)
-    icu_peds_occ, icu_peds_unocc = get_occupied_and_unoccupied(row, "icu_beds_pediatric")
-    acute_peds_occ, acute_peds_unocc = get_occupied_and_unoccupied(row, "acute_beds_pediatric")
+    # PedsTotal (peds_icu + peds_acute)
+    icu_peds_occ, icu_peds_unocc = get_occupied_and_unoccupied(record, "peds_icu")
+    acute_peds_occ, acute_peds_unocc = get_occupied_and_unoccupied(record, "peds_acute")
     groups.append(build_group("PedsTotalOccupied", "Peds Total Census", icu_peds_occ + acute_peds_occ))
     groups.append(build_group("PedsTotalUnoccupied", "Peds Total Unoccupied", icu_peds_unocc + acute_peds_unocc))
 
     # SpecialtyTotal (neonatal + nursery)
-    nicu_occ, nicu_unocc = get_occupied_and_unoccupied(row, "neonatal_icu_beds")
-    nursery_occ, nursery_unocc = get_occupied_and_unoccupied(row, "nursery_beds")
+    nicu_occ, nicu_unocc = get_occupied_and_unoccupied(record, "neonatal_icu")
+    nursery_occ, nursery_unocc = get_occupied_and_unoccupied(record, "nursery")
     groups.append(build_group("SpecialtyTotalOccupied", "Specialty Total Census", nicu_occ + nursery_occ))
     groups.append(build_group("SpecialtyTotalUnoccupied", "Specialty Total Unoccupied", nicu_unocc + nursery_unocc))
 
     return groups
 
 
-def build_organization_resource(config):
+def resolve_facility_profile(record, config, descriptor):
+    """Return (profile, unregistered) for a row.
+
+    `profile` is a dict with `organization` and `location` sub-dicts in the shape
+    the resource builders consume. For single-facility formats it is the top-level
+    config. For a multi-facility format it is the matching `facilities` entry, or
+    — when the facility is not in the registry — a sparse profile built from the
+    CSV row alone, with `unregistered=True` (the resource builders then emit a
+    placeholder identifier). The top-level config is never a partial fallback for
+    an unregistered facility.
+    """
+    if not descriptor["multi_facility"]:
+        return {"organization": config["organization"], "location": config["location"]}, False
+
+    name = record["facility_name"]
+    entry = config.get("facilities", {}).get(name)
+    if entry:
+        return entry, False
+
+    logger.warning(
+        "Facility %r not in config 'facilities' registry; emitting sparsely-populated "
+        "Organization/Location with a placeholder NHSN OrgID (%s|%s%s)",
+        name, NHSN_SYSTEM, UNREGISTERED_ORG_ID_PREFIX, slugify(name),
+    )
+    profile = {
+        "organization": {"name": name},
+        "location": {"name": name, "description": name},
+    }
+    return profile, True
+
+
+def build_organization_resource(profile, unregistered=False):
     """Build the bare Organization FHIR resource (no fullUrl or id)."""
-    org_cfg = config["organization"]
+    org_cfg = profile["organization"]
     addr = org_cfg.get("address", {})
 
-    return {
+    if unregistered:
+        identifier = [{
+            "system": NHSN_SYSTEM,
+            "value": f"{UNREGISTERED_ORG_ID_PREFIX}{slugify(org_cfg.get('name', ''))}",
+        }]
+    else:
+        identifier = [{
+            "system": NHSN_SYSTEM,
+            "value": org_cfg["nhsn_org_id"],
+        }]
+
+    resource = {
         "resourceType": "Organization",
         "meta": {
             "profile": [ORG_PROFILE, QICORE_ORG_PROFILE]
         },
-        "identifier": [{
-            "system": NHSN_SYSTEM,
-            "value": org_cfg["nhsn_org_id"],
-        }],
+        "identifier": identifier,
         "active": True,
         "type": [{
             "coding": [{
@@ -270,24 +350,28 @@ def build_organization_resource(config):
             }]
         }],
         "name": org_cfg["name"],
-        "telecom": [{
+    }
+    phone = org_cfg.get("phone", "")
+    if not unregistered or phone:
+        resource["telecom"] = [{
             "system": "phone",
-            "value": org_cfg.get("phone", ""),
+            "value": phone,
             "use": "work",
-        }],
-        "address": [{
+        }]
+    if not unregistered or addr:
+        resource["address"] = [{
             "line": addr.get("line", []),
             "city": addr.get("city", ""),
             "state": addr.get("state", ""),
             "postalCode": addr.get("postalCode", ""),
             "country": addr.get("country", "USA"),
-        }],
-    }
+        }]
+    return resource
 
 
-def build_organization_entry(config, org_uuid):
+def build_organization_entry(profile, org_uuid, unregistered=False):
     """Build the Organization Bundle entry with fullUrl and id."""
-    resource = build_organization_resource(config)
+    resource = build_organization_resource(profile, unregistered)
     resource["id"] = org_uuid.split(":")[-1]
     return {
         "fullUrl": org_uuid,
@@ -343,25 +427,35 @@ def build_device_entry(config, device_uuid):
     }
 
 
-def build_location_resource(config, org_ref):
+def build_location_resource(profile, org_ref, unregistered=False):
     """Build the bare Location FHIR resource (no fullUrl or id).
 
     Args:
-        config: Config dict.
+        profile: Facility profile dict (`organization` + `location`).
         org_ref: Organization reference string (urn:uuid:... or Organization/...).
+        unregistered: When True, emit a placeholder identifier instead of the
+            configured location identifier and omit a missing address.
     """
-    loc_cfg = config["location"]
-    addr = config["organization"].get("address", {})
+    loc_cfg = profile["location"]
+    addr = profile["organization"].get("address", {})
 
-    return {
+    if unregistered:
+        identifier = [{
+            "system": UNREGISTERED_FACILITY_SYSTEM,
+            "value": f"{slugify(loc_cfg.get('name', ''))}:location",
+        }]
+    else:
+        identifier = [{
+            "system": loc_cfg.get("identifier_system", ""),
+            "value": loc_cfg.get("identifier_value", ""),
+        }]
+
+    resource = {
         "resourceType": "Location",
         "meta": {
             "profile": [LOCATION_PROFILE]
         },
-        "identifier": [{
-            "system": loc_cfg.get("identifier_system", ""),
-            "value": loc_cfg.get("identifier_value", ""),
-        }],
+        "identifier": identifier,
         "status": "active",
         "name": loc_cfg.get("name", ""),
         "description": loc_cfg.get("description", ""),
@@ -373,30 +467,32 @@ def build_location_resource(config, org_ref):
                 "display": "Hospital",
             }]
         }],
-        "address": {
+    }
+    if not unregistered or addr:
+        resource["address"] = {
             "line": addr.get("line", []),
             "city": addr.get("city", ""),
             "state": addr.get("state", ""),
             "postalCode": addr.get("postalCode", ""),
             "country": addr.get("country", "USA"),
-        },
-        "physicalType": {
-            "coding": [{
-                "system": PHYSICAL_TYPE_SYSTEM,
-                "version": "2.0.1",
-                "code": "bu",
-                "display": "Building",
-            }]
-        },
-        "managingOrganization": {
-            "reference": org_ref,
-        },
+        }
+    resource["physicalType"] = {
+        "coding": [{
+            "system": PHYSICAL_TYPE_SYSTEM,
+            "version": "2.0.1",
+            "code": "bu",
+            "display": "Building",
+        }]
     }
+    resource["managingOrganization"] = {
+        "reference": org_ref,
+    }
+    return resource
 
 
-def build_location_entry(config, loc_uuid, org_uuid):
+def build_location_entry(profile, loc_uuid, org_uuid, unregistered=False):
     """Build the Location Bundle entry with fullUrl and id."""
-    resource = build_location_resource(config, org_uuid)
+    resource = build_location_resource(profile, org_uuid, unregistered)
     resource["id"] = loc_uuid.split(":")[-1]
     return {
         "fullUrl": loc_uuid,
@@ -404,22 +500,22 @@ def build_location_entry(config, loc_uuid, org_uuid):
     }
 
 
-def build_measure_report_resource(row, config, reporting_date, org_ref, loc_ref):
+def build_measure_report_resource(record, profile, reporting_date, org_ref, loc_ref):
     """Build the bare MeasureReport FHIR resource (no fullUrl or id).
 
     Args:
-        row: CSV row dict.
-        config: Config dict.
+        record: NormalizedRow dict.
+        profile: Facility profile dict (`organization` + `location`).
         reporting_date: date object for the reporting period.
         org_ref: Organization reference string (urn:uuid:... or Organization/...).
         loc_ref: Location reference string (urn:uuid:... or Location/...).
     """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
     date_str = reporting_date.strftime("%Y-%m-%d")
-    loc_display = config["location"].get("name", "")
-    org_display = config["organization"].get("name", "")
+    loc_display = profile["location"].get("name", "")
+    org_display = profile["organization"].get("name", "")
 
-    groups = compute_groups(row)
+    groups = compute_groups(record)
 
     return {
         "resourceType": "MeasureReport",
@@ -472,9 +568,9 @@ def build_measure_report_resource(row, config, reporting_date, org_ref, loc_ref)
     }
 
 
-def build_measure_report_entry(row, config, reporting_date, mr_uuid, org_uuid, loc_uuid):
+def build_measure_report_entry(record, profile, reporting_date, mr_uuid, org_uuid, loc_uuid):
     """Build the MeasureReport Bundle entry with fullUrl and id."""
-    resource = build_measure_report_resource(row, config, reporting_date, org_uuid, loc_uuid)
+    resource = build_measure_report_resource(record, profile, reporting_date, org_uuid, loc_uuid)
     resource["id"] = mr_uuid.split(":")[-1]
     return {
         "fullUrl": mr_uuid,
@@ -482,9 +578,13 @@ def build_measure_report_entry(row, config, reporting_date, mr_uuid, org_uuid, l
     }
 
 
-def build_bundle(row, config):
-    """Assemble the full FHIR Bundle for one CSV row."""
-    reporting_date = parse_reporting_date(row["reporting_date"])
+def build_bundle(record, config, descriptor):
+    """Assemble the full FHIR Bundle for one normalized row.
+
+    Returns (bundle, reporting_date, profile, unregistered).
+    """
+    reporting_date = record["reporting_date"]
+    profile, unregistered = resolve_facility_profile(record, config, descriptor)
 
     org_uuid = make_uuid()
     device_uuid = make_uuid()
@@ -502,14 +602,14 @@ def build_bundle(row, config):
         "type": "collection",
         "timestamp": now,
         "entry": [
-            build_organization_entry(config, org_uuid),
+            build_organization_entry(profile, org_uuid, unregistered),
             build_device_entry(config, device_uuid),
-            build_measure_report_entry(row, config, reporting_date, mr_uuid, org_uuid, loc_uuid),
-            build_location_entry(config, loc_uuid, org_uuid),
+            build_measure_report_entry(record, profile, reporting_date, mr_uuid, org_uuid, loc_uuid),
+            build_location_entry(profile, loc_uuid, org_uuid, unregistered),
         ],
     }
 
-    return bundle, reporting_date
+    return bundle, reporting_date, profile, unregistered
 
 
 # --- FHIR Server Client ---
@@ -606,14 +706,15 @@ def fhir_update(base_url, resource_type, server_id, resource, auth_token=None):
 
 # --- Upsert Functions ---
 
-def upsert_organization(config, base_url, auth_token=None):
-    """Search by NHSN OrgID identifier; create or update. Returns server reference."""
-    resource = build_organization_resource(config)
-    nhsn_id = config["organization"]["nhsn_org_id"]
+def upsert_organization(profile, unregistered, base_url, auth_token=None):
+    """Search by the Organization's identifier; create or update. Returns server reference."""
+    resource = build_organization_resource(profile, unregistered)
+    if unregistered:
+        ident = f"{NHSN_SYSTEM}|{UNREGISTERED_ORG_ID_PREFIX}{slugify(profile['organization'].get('name', ''))}"
+    else:
+        ident = f"{NHSN_SYSTEM}|{profile['organization']['nhsn_org_id']}"
 
-    existing = fhir_search(base_url, "Organization",
-                           {"identifier": f"{NHSN_SYSTEM}|{nhsn_id}"},
-                           auth_token)
+    existing = fhir_search(base_url, "Organization", {"identifier": ident}, auth_token)
     if existing:
         server_id = existing["id"]
         fhir_update(base_url, "Organization", server_id, resource, auth_token)
@@ -623,16 +724,16 @@ def upsert_organization(config, base_url, auth_token=None):
     return f"Organization/{server_id}"
 
 
-def upsert_location(config, org_server_ref, base_url, auth_token=None):
-    """Search by location identifier; create or update with org reference. Returns server reference."""
-    resource = build_location_resource(config, org_server_ref)
-    loc_cfg = config["location"]
-    id_system = loc_cfg.get("identifier_system", "")
-    id_value = loc_cfg.get("identifier_value", "")
+def upsert_location(profile, unregistered, org_server_ref, base_url, auth_token=None):
+    """Search by the Location's identifier; create or update with org reference. Returns server reference."""
+    resource = build_location_resource(profile, org_server_ref, unregistered)
+    loc_cfg = profile["location"]
+    if unregistered:
+        ident = f"{UNREGISTERED_FACILITY_SYSTEM}|{slugify(loc_cfg.get('name', ''))}:location"
+    else:
+        ident = f"{loc_cfg.get('identifier_system', '')}|{loc_cfg.get('identifier_value', '')}"
 
-    existing = fhir_search(base_url, "Location",
-                           {"identifier": f"{id_system}|{id_value}"},
-                           auth_token)
+    existing = fhir_search(base_url, "Location", {"identifier": ident}, auth_token)
     if existing:
         server_id = existing["id"]
         fhir_update(base_url, "Location", server_id, resource, auth_token)
@@ -664,10 +765,10 @@ def upsert_device(config, base_url, auth_token=None):
     return f"Device/{server_id}"
 
 
-def upsert_measure_report(row, config, reporting_date, org_server_ref, loc_server_ref,
-                           base_url, auth_token=None):
+def upsert_measure_report(record, profile, reporting_date, org_server_ref, loc_server_ref,
+                          base_url, auth_token=None):
     """Search by measure+subject+date; create or update with server refs. Returns server reference."""
-    resource = build_measure_report_resource(row, config, reporting_date,
+    resource = build_measure_report_resource(record, profile, reporting_date,
                                              org_server_ref, loc_server_ref)
     date_str = reporting_date.strftime("%Y-%m-%d")
 
@@ -686,13 +787,13 @@ def upsert_measure_report(row, config, reporting_date, org_server_ref, loc_serve
     return f"MeasureReport/{server_id}"
 
 
-def upsert_bundle(bundle, facility_guid, reporting_date, base_url, auth_token=None):
-    """Persist the self-contained Bundle. Uses deterministic identifier for upsert."""
+def upsert_bundle(bundle, facility_key, reporting_date, base_url, auth_token=None):
+    """Persist the self-contained Bundle. Uses a deterministic identifier for upsert."""
     bundle_copy = copy.deepcopy(bundle)
 
-    # Generate deterministic identifier from facility_guid + reporting_date
+    # Generate deterministic identifier from a stable facility key + reporting_date
     date_str = reporting_date.strftime("%Y-%m-%d")
-    det_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{facility_guid}:{date_str}"))
+    det_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{facility_key}:{date_str}"))
     bundle_id_system = "urn:ietf:rfc:3986"
     bundle_id_value = f"urn:uuid:{det_uuid}"
 
@@ -727,6 +828,10 @@ def main():
     parser.add_argument("--output-dir", default="./output", help="Output directory (default: ./output)")
     parser.add_argument("--fhir-server", default=None, metavar="URL",
                         help="FHIR server base URL to persist resources to (e.g. http://localhost:8080/fhir)")
+    parser.add_argument("--bundles-mrs-only", action="store_true",
+                        help="Write only the Bundle and MeasureReport.json for each facility locally; "
+                             "skip the rarely-changing Organization.json, Device.json, and Location.json "
+                             "files. Does not change what is persisted to a --fhir-server.")
     args = parser.parse_args()
 
     # --- Set up logging ---
@@ -745,7 +850,9 @@ def main():
     logger.addHandler(console_handler)
 
     config = load_config(args.config)
-    rows = parse_csv(args.csv_file)
+    # Detect format and parse rows *before* creating any output — an unrecognized
+    # layout exits here without writing anything.
+    descriptor, records = parse_csv(args.csv_file)
 
     os.makedirs(args.output_dir, exist_ok=True)
 
@@ -764,19 +871,26 @@ def main():
     if fhir_server_url and token_endpoint and client_id and client_secret:
         auth_token = fetch_access_token(token_endpoint, client_id, client_secret)
 
-    # Track server refs for reuse across rows (Org/Location/Device are the same for all rows)
-    org_ref = None
-    loc_ref = None
+    # Server refs are cached per facility (a multi-facility file has many); the
+    # Device is the same for all rows in a run.
+    org_refs = {}
+    loc_refs = {}
     dev_ref = None
 
-    for i, row in enumerate(rows):
-        bundle, reporting_date = build_bundle(row, config)
-        facility_name = sanitize_filename(row.get("facility_name", f"facility_{i}"))
+    for i, record in enumerate(records):
+        bundle, reporting_date, profile, unregistered = build_bundle(record, config, descriptor)
+        facility_name = sanitize_filename(record.get("facility_name") or f"facility_{i}")
         date_str = reporting_date.strftime("%Y-%m-%d")
 
-        # Create date subdirectory
+        # Create the date subdirectory (holds Bundle files) and the per-facility
+        # subdirectory (holds that facility's individual resources). Individual
+        # resources are never written loose in the date directory, so processing a
+        # multi-facility (or multi-row) input file never overwrites one facility's
+        # resources with another's.
         date_dir = os.path.join(args.output_dir, date_str)
         os.makedirs(date_dir, exist_ok=True)
+        facility_dir = os.path.join(date_dir, facility_name)
+        os.makedirs(facility_dir, exist_ok=True)
 
         # Write bundle
         bundle_filepath = os.path.join(date_dir, f"{facility_name}.{date_str}.BedCapacity.json")
@@ -784,11 +898,15 @@ def main():
             json.dump(bundle, f, indent=2)
         logger.info("Generated %s", bundle_filepath)
 
-        # Write individual resources for debugging
+        # Write individual resources into the per-facility subdirectory (useful for
+        # debugging). With --bundles-mrs-only, only the MeasureReport is written; the
+        # rarely-changing Organization/Device/Location files are skipped.
         for entry in bundle["entry"]:
             resource = entry["resource"]
             res_type = resource["resourceType"]
-            res_filepath = os.path.join(date_dir, f"{res_type}.json")
+            if args.bundles_mrs_only and res_type != "MeasureReport":
+                continue
+            res_filepath = os.path.join(facility_dir, f"{res_type}.json")
             with open(res_filepath, "w") as f:
                 json.dump(resource, f, indent=2)
             logger.info("Generated %s", res_filepath)
@@ -796,19 +914,18 @@ def main():
         # Optionally persist to FHIR server
         if fhir_server_url:
             try:
-                # Upsert Org/Location/Device once, reuse for subsequent rows
-                if org_ref is None:
-                    org_ref = upsert_organization(config, fhir_server_url, auth_token)
-                if loc_ref is None:
-                    loc_ref = upsert_location(config, org_ref, fhir_server_url, auth_token)
+                fac = record.get("facility_name") or f"facility_{i}"
+                if fac not in org_refs:
+                    org_refs[fac] = upsert_organization(profile, unregistered, fhir_server_url, auth_token)
+                if fac not in loc_refs:
+                    loc_refs[fac] = upsert_location(profile, unregistered, org_refs[fac], fhir_server_url, auth_token)
                 if dev_ref is None:
                     dev_ref = upsert_device(config, fhir_server_url, auth_token)
 
-                mr_ref = upsert_measure_report(row, config, reporting_date,
-                                               org_ref, loc_ref,
+                mr_ref = upsert_measure_report(record, profile, reporting_date,
+                                               org_refs[fac], loc_refs[fac],
                                                fhir_server_url, auth_token)
-                facility_guid = row.get("facility_guid", "")
-                bundle_ref = upsert_bundle(bundle, facility_guid, reporting_date,
+                bundle_ref = upsert_bundle(bundle, stable_facility_key(record), reporting_date,
                                            fhir_server_url, auth_token)
                 logger.info("Persisted: %s + %s", mr_ref, bundle_ref)
             except urllib.error.HTTPError:
@@ -817,7 +934,7 @@ def main():
                 logger.error("FHIR server unreachable: %s", e)
                 fhir_server_url = None  # Disable for remaining rows
 
-    logger.info("Converted %d row(s) to FHIR Bundles in %s", len(rows), args.output_dir.rstrip("/"))
+    logger.info("Converted %d row(s) to FHIR Bundles in %s", len(records), args.output_dir.rstrip("/"))
 
 
 if __name__ == "__main__":

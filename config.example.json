@@ -23,6 +23,48 @@
     "identifier_system": "urn:oid:2.16.840.1.113883.3.2",
     "identifier_value": "safr-csv-fhir"
   },
+  "facilities": {
+    "Seaside Medical Center": {
+      "organization": {
+        "nhsn_org_id": "10000001",
+        "name": "Seaside Medical Center",
+        "phone": "+1-555-000-0001",
+        "address": {
+          "line": ["1 Ocean Avenue"],
+          "city": "Seaside",
+          "state": "WA",
+          "postalCode": "98100",
+          "country": "USA"
+        }
+      },
+      "location": {
+        "identifier_system": "urn:oid:2.16.840.1.113883.3.1",
+        "identifier_value": "SEASIDE-MAIN",
+        "name": "Seaside Medical Center",
+        "description": "Main campus"
+      }
+    },
+    "AMC - Southeast": {
+      "organization": {
+        "nhsn_org_id": "10000002",
+        "name": "AMC - Southeast",
+        "phone": "+1-555-000-0002",
+        "address": {
+          "line": ["200 Southeast Blvd"],
+          "city": "Renton",
+          "state": "WA",
+          "postalCode": "98055",
+          "country": "USA"
+        }
+      },
+      "location": {
+        "identifier_system": "urn:oid:2.16.840.1.113883.3.1",
+        "identifier_value": "AMC-SE",
+        "name": "AMC - Southeast",
+        "description": "Southeast campus"
+      }
+    }
+  },
   "server": {
     "base_url": "YOUR_FHIR_SERVER_URL",
     "token_endpoint": "YOUR_TOKEN_ENDPOINT",

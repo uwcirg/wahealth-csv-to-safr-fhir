@@ -19,7 +19,7 @@ python3 convert.py input.csv
 ## Usage
 
 ```
-python3 convert.py input.csv [--config config.json] [--output-dir ./output] [--fhir-server URL]
+python3 convert.py input.csv [--config config.json] [--output-dir ./output] [--fhir-server URL] [--bundles-mrs-only]
 ```
 
 | Flag | Default | Description |
@@ -28,27 +28,32 @@ python3 convert.py input.csv [--config config.json] [--output-dir ./output] [--f
 | `--config` | `config.json` | Path to configuration file |
 | `--output-dir` | `./output` | Directory for generated JSON files |
 | `--fhir-server` | *(none)* | FHIR server base URL (e.g. `http://localhost:8080/fhir`) |
+| `--bundles-mrs-only` | *(off)* | Write only the Bundle and `MeasureReport.json` for each facility; skip the rarely-changing `Organization.json`, `Device.json`, `Location.json`. Affects local files only — `--fhir-server` persistence is unchanged. |
+
+The input CSV layout is **auto-detected from its header row** — see [Input CSV formats](#input-csv-formats). An unrecognized header is a hard error: the converter exits without writing any output.
 
 ## Output
 
-For each CSV row the script produces:
+For each data row the script produces:
 
 - **Bundle** — `{output-dir}/{date}/{facility_name}.{date}.BedCapacity.json`
-- **Individual resources** — `Organization.json`, `Device.json`, `MeasureReport.json`, `Location.json` in the same date subdirectory (useful for debugging)
+- **Individual resources** — `Organization.json`, `Device.json`, `MeasureReport.json`, `Location.json` in a per-facility subdirectory `{output-dir}/{date}/{facility_name}/` (useful for debugging)
 
-Output is organized into per-date subdirectories under `--output-dir`.
+Output is organized first by reporting date, then by facility: `{output-dir}/{date}/` holds the Bundle file(s) for that date and one subdirectory per facility, and `{output-dir}/{date}/{facility_name}/` holds that facility's individual resources. A multi-facility input file produces one Bundle per (facility, reporting date) row; Bundle filenames stay unambiguous because both the facility name and the date are in the name, and each facility's individual resources are isolated in its own subdirectory (so processing a multi-facility file never overwrites one facility's individual resources with another's).
+
+With `--bundles-mrs-only`, only the Bundle file(s) and each facility's `MeasureReport.json` are written; the rarely-changing `Organization.json`, `Device.json`, and `Location.json` files are skipped. This affects local files only — what gets persisted with `--fhir-server` is unchanged.
 
 ## FHIR server persistence
 
 With `--fhir-server` (or `server.base_url` in config), the script also persists resources directly to a FHIR server using **upsert semantics** (create on first run, update on subsequent runs). Resources persisted:
 
-- Organization (by NHSN identifier)
+- Organization (by NHSN identifier — or the placeholder identifier for an unconfigured facility, see below)
 - Location (by facility identifier)
 - Device (by software identifier)
 - MeasureReport (by measure + subject + date)
-- Bundle (by deterministic UUID derived from facility GUID + date)
+- Bundle (by deterministic UUID derived from `facility_guid` — or, when the format has no GUID, the slugified facility name — plus the date)
 
-Organization, Location, and Device are upserted once and reused across all rows in a run.
+The Device is upserted once per run. Organization and Location are upserted once per distinct facility (a multi-facility input file can carry several).
 
 ### Authentication
 
@@ -78,6 +83,15 @@ Copy `config.example.json` to `config.json` and fill in:
     "identifier_system": "http://example.org/fhir/device-identifier",
     "identifier_value": "safr-csv-fhir"
   },
+  "facilities": {       // optional — per-facility identity for multi-facility input files
+    "Some Hospital Name": {   // key = the exact value in the CSV's facility column
+      "organization": { "nhsn_org_id": "...", "name": "Some Hospital Name", "phone": "...",
+                        "address": { "line": [...], "city": "...", "state": "WA", "postalCode": "...", "country": "USA" } },
+      "location":     { "identifier_system": "...", "identifier_value": "...",
+                        "name": "Some Hospital Name", "description": "..." }
+    }
+    // ... one entry per known facility
+  },
   "server": {           // optional — omit or leave empty to skip server persistence
     "base_url": "",
     "token_endpoint": "",
@@ -86,6 +100,10 @@ Copy `config.example.json` to `config.json` and fill in:
   }
 }
 ```
+
+For a **single-facility** input layout (the original WA Health format and the 2026-04-30 WA Health dictionary), the top-level `organization`/`location` describe the submitting hospital and the `facilities` registry is not consulted (the CSV's facility name only affects the output filename).
+
+For a **multi-facility** layout (the KC multi-hospital format), each row's identity is resolved from `facilities[<that row's facility name>]`. If a facility is **not** in the registry (or no `facilities` section is configured), the converter still emits that row's Bundle, but with a **sparsely-populated** Organization and Location built from the CSV row alone and a deterministic *placeholder* NHSN OrgID — `https://www.cdc.gov/nhsn/OrgID | UNREGISTERED-<slugified-facility-name>` — and logs a `WARNING`. These Bundles are structurally valid (they pass FHIR validation), just under-populated; add a `facilities` entry to fill them in. The top-level `organization`/`location` are **not** borrowed for an unconfigured facility (they describe a different specific hospital).
 
 ## Logging
 
@@ -124,12 +142,22 @@ The converter tracks two independent IG version constants in `convert.py`:
 
 These are independently versioned. Updating either constant is a deliberate, reviewable change that triggers a full FHIR validation pass before merge.
 
-## CSV columns processed
+## Input CSV formats
 
-The script reads bed capacity and ED visit columns from the WA Health CSV format. HRD / respiratory disease counts (COVID, influenza, RSV) are present in the CSV but are **not** processed by this tool.
+The converter detects which of three hospital CSV layouts a file uses by inspecting its header row, then normalizes every row to one internal model before generating FHIR — so detection/parsing is the only format-aware code (in `csv_formats.py`); everything downstream is format-agnostic.
 
-**Bed types:** ICU (adult, pediatric), Acute/Non-ICU (adult, pediatric), NICU, Nursery, Surge/Overflow, Other Inpatient
+| If the header contains… | …it's treated as | Notes |
+|---|---|---|
+| `facility_guid` **and** `reporting_date` | **Original WA Health format** | one facility per file; `reporting_date` is `MM/DD/YYYY`; ~35 HRD columns present in the file are ignored |
+| `facility` **and** `reportingday` | **2026-04-30 WA Health dictionary from KC** | one facility per file; ISO `YYYY-MM-DD` dates; `covid_*`/`flu_*`/`rsv_*` and the `all_inpatient_*` totals are ignored (aggregates are recomputed from the per-area columns) |
+| `Facility` **and** `Reporting Date` | **KC multi-hospital from MFT 2026-05-11** | Title Case headers; **many facilities and dates per file**; ISO dates; no HRD columns; per-facility identity comes from `config.json`'s `facilities` registry (see [Configuration](#configuration)) |
 
-**ED visits:** Adult and Pediatric emergency department visits
+A file whose header matches none of these is rejected with an error listing the supported formats. In particular, the data-dictionary spreadsheet `WA-HEALTH-DataDictionary.Variable Catalog.KC.2026-04-30.csv` is a *schema reference* (its rows define column names) — it is not a data file the converter ingests. The per-format column maps are documented in `specs/008-multi-format-csv-input/contracts/input-formats.md`.
 
-**Computed aggregates:** AllBeds, AdultTotal, PedsTotal, SpecialtyTotal (each with occupied + unoccupied counts)
+Whichever format is used, the converter processes the same data:
+
+- **Bed areas** (occupied + capacity, per area): ICU (adult, pediatric), Acute/Non-ICU (adult, pediatric), NICU, Nursery, Surge/Overflow, Other Inpatient
+- **ED visits:** previous-day Adult and Pediatric emergency department visits
+- **Computed aggregates:** AllBeds, AdultTotal, PedsTotal, SpecialtyTotal (each with occupied + unoccupied counts), plus the three ED census groups — 25 MeasureReport groups in all
+
+HRD / respiratory-disease counts (COVID, influenza, RSV) appear in two of the formats but are **not** processed by this tool (the SAFR `HRDMeasure` is a separate, future scope). When a format has no `facility_guid`, the converter derives a stable identifier from the facility name + reporting date for the deterministic Bundle identifier and FHIR-server upsert key.

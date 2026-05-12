@@ -1,12 +1,16 @@
 <!--
 Sync Impact Report
-- Version change: 1.4.0 → 1.5.0
+- Version change: 1.6.0 → 1.7.0
 - Modified principles:
-  - Development Workflow — added "README as Living Documentation"
-    subsection requiring that all changes consider whether README.md
-    needs a corresponding update.
-- Added sections:
-  - "### README as Living Documentation" under Development Workflow
+  - "Clear, Predictable Output" — replaced the "individual resources
+    alongside the Bundle" rule with a per-facility subdirectory layout
+    (`output/{YYYY-MM-DD}/{facility_name}/`) so multi-facility input
+    files no longer overwrite one facility's individual resources with
+    another's; added a runtime flag rule requiring an opt-in
+    `--bundles-mrs-only` mode that emits only the Bundle and
+    MeasureReport artifacts and skips the rarely-changing
+    Organization / Device / Location files.
+- Added sections: None
 - Removed sections: None
 - Templates requiring updates:
   - .specify/templates/plan-template.md — ✅ no updates needed
@@ -14,7 +18,10 @@ Sync Impact Report
   - .specify/templates/spec-template.md — ✅ no updates needed
   - .specify/templates/tasks-template.md — ✅ no updates needed
   - .specify/templates/commands/ — ✅ no command files exist
-- Follow-up TODOs: None
+- Follow-up TODOs:
+  - README.md — ✅ resolved: feature 009-per-facility-output-layout
+    updated the "Output" section and options table to describe the
+    per-facility subdirectory layout and the `--bundles-mrs-only` flag.
 -->
 
 # WA Health SAFR CSV-to-FHIR Converter Constitution
@@ -23,7 +30,9 @@ Sync Impact Report
 > Python utility that converts Washington State hospital bed capacity
 > and HRD surveillance CSV data into FHIR R4 Bundles compliant with
 > the US SAFR Implementation Guide and the CDC NHSN SAFR Content
-> Implementation Guide.
+> Implementation Guide. Input arrives in several hospital CSV layouts;
+> the converter normalizes them to a single internal model before
+> generating FHIR.
 
 ## Core Principles
 
@@ -125,6 +134,10 @@ reproducible and regressions from IG version changes are detectable.
   `2025.10.21.Test.Facility.BedCapacity.csv`). These serve as
   regression inputs. Plan to relocate test fixtures to a `test/`
   directory.
+- Every supported input CSV format (see "Multi-Format CSV Input")
+  MUST have at least one canonical test fixture exercised by CI's
+  validation pipeline. Adding a new input format without a
+  corresponding fixture is incomplete work.
 - CI MUST run the converter against all test inputs, then validate
   every output Bundle with the HL7 FHIR Validator. Zero errors = pass.
 - Developers SHOULD run FHIR validation locally during development,
@@ -134,8 +147,8 @@ reproducible and regressions from IG version changes are detectable.
   corresponding test CSV rows that exercise the new columns.
 - Supplement conformance tests with targeted unit tests for computation
   logic (e.g., aggregate calculations, unoccupied-bed clamping, date
-  parsing) where correctness is not fully captured by profile
-  validation alone.
+  parsing, format detection) where correctness is not fully captured
+  by profile validation alone.
 - **IG Version in Validation:** The HL7 FHIR Validator MUST be
   invoked with both SAFR IG packages versioned (e.g., via
   `-ig hl7.fhir.us.safr#1.0.0 -ig gov.cdc.nhsn.safr#1.0.0`) rather
@@ -192,6 +205,89 @@ reproducible and regressions from IG version changes are detectable.
     NOT treat them as blockers. Errors not matching known issues
     remain blockers.
 
+### Multi-Format CSV Input
+
+The converter MUST accept the supported hospital CSV layouts and
+normalize each to a single internal row model before any FHIR
+generation. Downstream code (group computation, Bundle assembly,
+server persistence, validation) MUST be format-agnostic.
+
+**Rationale:** Source systems do not agree on a column schema.
+Washington State hospitals submit data in at least three distinct
+shapes today, and more reporting jurisdictions will appear over time.
+Pushing format knowledge to a thin parsing/detection layer — rather
+than threading conditionals through the FHIR generation logic — keeps
+the conformance-critical code path stable and testable, and makes
+adding a fourth format a localized change.
+
+**Supported formats:**
+- **Original WA Health format** — snake_case headers, one facility per
+  file; identifier columns `facility_guid`, `facility_name`,
+  `reporting_date` (`MM/DD/YYYY`); bed columns
+  `<area>_currently_occupied` / `<area>_capacity` for the eight bed
+  areas; ED columns
+  `previous_day_adult_emergency_department_visits` /
+  `previous_day_pediatric_emergency_department_visits`; ~35 HRD
+  (COVID / influenza / RSV) columns present in the file. This is the
+  format already implemented; canonical fixture:
+  `2025.10.21.Test.Facility.BedCapacity.csv`.
+- **"2026-04-30 WA Health dictionary from KC"** — the schema
+  published in
+  `WA-HEALTH-DataDictionary.Variable Catalog.KC.2026-04-30.csv`;
+  a `Section, Variable Name, Data Type, Description, Notes` catalog
+  defining: Report section (`facility`, `county`, `reportingday`,
+  `created_on`); Bed Occupancy section (`all_inpatient_cap` /
+  `all_inpatient_occ` plus `<area>_cap` / `<area>_occ` for the eight
+  areas, `prevd_adult_ed`, `prevd_ped_ed`); COVID-19, Influenza, and
+  RSV Stats sections (`covid_*`, `flu_*`, `rsv_*` hospitalization,
+  ICU, and age-banded admission counts). No `facility_guid`.
+- **"KC multi-hospital from MFT 2026-05-11"** — Title Case headers,
+  **multiple facilities and multiple reporting dates per file**;
+  columns `Facility`, `Contact`, `Reporting Date` (`YYYY-MM-DD`),
+  `Created On` (ISO timestamp), bed occupancy/capacity per area
+  (e.g., `ICU Adult Occupancy` / `ICU Adult Capacity`, `Neonatal ICU
+  Beds Currently in Use` / `Neonatal ICU Beds Capacity`, `Surge Beds
+  Currently in Use` / `Surge Beds Capacity`, `Adult Other Inpatient
+  Beds Currently in Use` / `Adult Other Inpatient Beds Capacity`),
+  `Previous Day Adult ED Visits`, `Previous Day Pediatric ED Visits`.
+  No `facility_guid`; no HRD columns. Sample fixture:
+  `census_20260511.FromKC.SubsetObfsctd.csv`.
+
+**Rules:**
+- A format-detection step MUST identify the input layout from its
+  header signature (and, where needed, file structure) and dispatch
+  to the matching parser/mapper. Detection MUST be deterministic.
+- An unrecognized layout MUST fail loudly with a clear error naming
+  the supported formats — never a silent best-effort or partial parse.
+  (A row resolving to all-zero counts because column names did not
+  match is the prohibited failure mode here.)
+- Each format's parser maps to the same internal row model; the FHIR
+  generation code MUST NOT branch on the originating format.
+- Multi-facility input files MUST be supported: the converter
+  processes every distinct (facility, reporting date) row and emits
+  one Bundle per row, regardless of how many facilities appear in a
+  single file.
+- Date parsing MUST accommodate each format's date convention
+  (`MM/DD/YYYY`, ISO `YYYY-MM-DD`, ISO timestamp); the internal model
+  stores a normalized date.
+- When `facility_guid` is absent (the "2026-04-30 WA Health
+  dictionary from KC" and "KC multi-hospital from MFT 2026-05-11"
+  formats), the converter MUST derive a stable identifier from
+  available fields (e.g., facility name + reporting date) for
+  deterministic Bundle identifiers and FHIR-server upsert keys. This
+  fallback MUST be documented in `README.md`.
+- Columns a given format does not carry (e.g., HRD counts in the "KC
+  multi-hospital from MFT 2026-05-11" format, `county`/`created_on` in
+  the original format) are simply absent from that format's row model;
+  their corresponding outputs are omitted, not defaulted to fabricated
+  values.
+- New input formats MUST be added by extending the
+  detection/parser/mapper layer — never by special-casing a layout
+  inside the FHIR generation code or by mutating the shared internal
+  model's contract.
+- Each supported format MUST have a canonical test fixture (see
+  "Validation-Driven Testing").
+
 ### Data Integrity and Defensive Transformation
 
 The converter MUST handle real-world data quality issues gracefully,
@@ -211,8 +307,11 @@ health report is worse than a loud failure.
   mappings, to avoid compounding rounding or clamping artifacts.
 - Every data quality accommodation MUST be logged at WARNING level or
   above.
-- New mappings (e.g., HRD surveillance) must follow the same defensive
-  patterns.
+- New mappings (e.g., HRD surveillance) and new input-format parsers
+  MUST follow the same defensive patterns. Note that "missing column
+  because the format does not define it" is a structural fact handled
+  by format detection (see "Multi-Format CSV Input"), distinct from
+  "expected column present but empty/malformed" handled here.
 
 ### Scope — Bed Capacity and HRD Surveillance
 
@@ -222,10 +321,10 @@ The converter covers two SAFR measure domains: **bed capacity**
 **Rationale:** The initial scope was bed capacity only. The project
 team has decided to expand to include Hospital Respiratory Data
 (HRD) — COVID-19, influenza, and RSV hospitalization and admission
-metrics from the ~35 currently-unused CSV columns. Both Measure
-definitions (`BedCapacityMeasure` and `HRDMeasure`) are published by
-the CDC NHSN SAFR Content IG (`gov.cdc.nhsn.safr`), which is the
-authoritative source for computable Measure resources.
+metrics. Both Measure definitions (`BedCapacityMeasure` and
+`HRDMeasure`) are published by the CDC NHSN SAFR Content IG
+(`gov.cdc.nhsn.safr`), which is the authoritative source for
+computable Measure resources.
 
 **Rules:**
 - Bed capacity: 7 bed types x occupied/unoccupied, 3 ED visit groups,
@@ -234,10 +333,17 @@ authoritative source for computable Measure resources.
 - HRD surveillance: Implementation pending. Will produce a separate
   MeasureReport (or extend the existing one) per the Content IG's
   `HRDMeasure` definition.
+- HRD output is produced only for input formats that actually carry
+  HRD columns (e.g., the original WA Health format and the "2026-04-30
+  WA Health dictionary from KC"). A format without HRD columns (e.g.,
+  "KC multi-hospital from MFT 2026-05-11") yields bed-capacity output
+  only; this is expected, not an error.
 - Each measure domain MUST have its own test CSV fixtures and
   validation targets.
 - Do not add measure domains beyond bed capacity and HRD without a
-  constitution amendment.
+  constitution amendment. (Adding a new *input format* for an
+  existing measure domain is governed by "Multi-Format CSV Input" and
+  does not require an amendment.)
 
 ## Deployment & Security
 
@@ -289,10 +395,29 @@ to find, review, and troubleshoot submissions. Output structure is
 part of the user experience.
 
 **Rules:**
-- Bundle files: `{facility_name}.{reporting_date}.BedCapacity.json`
-- Individual resources: `Organization.json`, `Device.json`,
-  `MeasureReport.json`, `Location.json` alongside the Bundle.
-- Output organized by date: `output/{YYYY-MM-DD}/`.
+- Output is organized first by reporting date, then by facility:
+  `output/{YYYY-MM-DD}/` holds the Bundle file(s) for that date, and
+  `output/{YYYY-MM-DD}/{facility_name}/` holds that facility's
+  individual resources.
+- Bundle files: `output/{YYYY-MM-DD}/{facility_name}.{reporting_date}.BedCapacity.json`.
+- Individual resources — `Organization.json`, `Device.json`,
+  `MeasureReport.json`, `Location.json` — MUST be written into the
+  per-facility subdirectory `output/{YYYY-MM-DD}/{facility_name}/`,
+  never directly into the date directory. This guarantees that
+  processing a multi-facility (or multi-row) input file never
+  overwrites one facility's individual resources with another's; the
+  facility owning a given resource file is unambiguous from its path.
+- Multi-facility input files produce one Bundle per (facility,
+  reporting date) row; Bundle filenames remain unambiguous because the
+  facility name and reporting date are both in the name, and each
+  facility's individual resources are isolated in its own subdirectory.
+- The converter MUST provide an opt-in runtime flag
+  `--bundles-mrs-only` that restricts output to the Bundle and the
+  standalone `MeasureReport.json` artifacts and skips the
+  rarely-changing `Organization.json`, `Device.json`, and
+  `Location.json` files. The default (flag absent) writes the full
+  set. The flag MUST be documented in `README.md` and surfaced in
+  `--help`.
 - JSON MUST be pretty-printed (indented) for human readability.
 - Logging to both console (for immediate feedback) and timestamped
   file (for audit trail) in `log/`.
@@ -338,9 +463,9 @@ when stale.
 
 **Rules:**
 - When a feature adds or changes IG references, profile URLs, CLI
-  flags, configuration fields, output structure, or version tracking
-  constants, the implementer MUST check whether `README.md` needs a
-  corresponding update.
+  flags, configuration fields, output structure, supported input
+  formats, or version tracking constants, the implementer MUST check
+  whether `README.md` needs a corresponding update.
 - README updates SHOULD be included in the same PR as the code change,
   not deferred to a follow-up.
 - LLM agents performing development work SHOULD flag README staleness
@@ -358,8 +483,8 @@ Split only when complexity demands it.
 **Rules:**
 - `convert.py` remains the single entry point for the converter.
 - Extract modules only when a clear boundary emerges (e.g., FHIR
-  client logic, HRD mapping logic) AND the single file exceeds ~1000
-  lines.
+  client logic, HRD mapping logic, input-format parsers) AND the
+  single file exceeds ~1000 lines.
 - Test files, CI config, and dev tooling live in their own directories
   and do not count toward the single-file threshold.
 - Any split must preserve the zero-dependency runtime constraint.
@@ -390,4 +515,4 @@ Split only when complexity demands it.
   exception and the reasoning in the relevant spec or PR — do not
   silently deviate.
 
-**Version**: 1.5.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-04-23
+**Version**: 1.7.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-05-12
