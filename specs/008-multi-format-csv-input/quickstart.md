@@ -63,7 +63,7 @@ OrgIDs or addresses. Provide those in `config.json` under a new optional
   ```
   WARNING Facility 'Nordic Foothillville' not in config 'facilities' registry; emitting
           sparsely-populated Organization/Location with a placeholder identifier
-          (urn:wahealth:csv-to-safr:unregistered-facility|nordic-issaquah)
+          (urn:wahealth:csv-to-safr:unregistered-facility|nordic-foothillville)
   ```
   These Bundles still pass FHIR validation — they're structurally valid, just
   under-populated. Add a `facilities` entry to fill them in. The top-level
