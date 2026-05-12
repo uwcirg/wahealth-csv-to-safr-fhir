@@ -1,6 +1,6 @@
 # wahealth-csv-to-safr-fhir Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-23
+Auto-generated from all feature plans. Last updated: 2026-05-11
 
 ## Active Technologies
 - Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning) (002-ig-version-tracking)
@@ -8,6 +8,7 @@ Auto-generated from all feature plans. Last updated: 2026-04-23
 - Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff`, `validator_cli.jar`, `gitleaks` (003-constitution-repo-update)
 - Python 3 (stdlib only) + None at runtime (004-safr-ig-stu1-update)
 - N/A (documentation only — Markdown) (007-readme-content-ig)
+- Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks`/`git-secrets` (secret scanning) (008-multi-format-csv-input)
 
 - Python 3 (stdlib only for runtime; dev tools use pip) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning) (001-constitution-alignment)
 
@@ -27,9 +28,9 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3 (stdlib only for runtime; dev tools use pip): Follow standard conventions
 
 ## Recent Changes
+- 008-multi-format-csv-input: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks`/`git-secrets` (secret scanning)
 - 007-readme-content-ig: Added N/A (documentation only — Markdown)
 - 006-content-ig-integration: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter),
-- 005-constitution-repo-sync: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning)
 
 
 <!-- MANUAL ADDITIONS START -->
