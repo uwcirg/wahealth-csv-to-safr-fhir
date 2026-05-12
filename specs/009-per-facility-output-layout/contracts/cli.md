@@ -14,7 +14,7 @@ python3 convert.py <csv_file> [--config config.json] [--output-dir ./output] \
 
 | Option | Form | Default | Behavior |
 |--------|------|---------|----------|
-| `--bundles-mrs-only` | flag (no value) | absent | When present, the converter writes only the Bundle file(s) and the standalone `MeasureReport.json` for each facility; it does **not** write `Organization.json`, `Device.json`, or `Location.json`. When absent, the full set of individual resources is written. Does not affect FHIR-server persistence, Bundle/MeasureReport contents, logging, or exit codes. Appears in `--help`. |
+| `--bundles-mrs-only` | flag (no value) | absent | When present, the converter writes only the Bundle file(s) and the individual `MeasureReport.json` for each facility **locally**; it does **not** write `Organization.json`, `Device.json`, or `Location.json` to disk. When absent, the full set of individual resource files is written. Does **not** affect FHIR-server persistence (Bundle + standalone MeasureReport are the primary artifacts; Organization/Device/Location are still upserted as supporting resources the MeasureReport's references require), Bundle/MeasureReport contents, logging format, or exit codes. Appears in `--help`. |
 
 ## Output layout contract
 

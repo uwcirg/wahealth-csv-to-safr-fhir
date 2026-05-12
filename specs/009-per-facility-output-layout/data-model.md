@@ -49,7 +49,7 @@ Bundle filename's facility segment and the facility subdirectory name — they a
 | `--config` | path | `config.json` | unchanged |
 | `--output-dir` | path | `./output` | unchanged; now also the root of per-facility subdirs |
 | `--fhir-server` | URL | none | unchanged; **not** affected by `--bundles-mrs-only` |
-| `--bundles-mrs-only` | boolean flag (`store_true`) | absent (false) | when present, only Bundle file(s) + `MeasureReport.json` are written locally; `Organization.json` / `Device.json` / `Location.json` are skipped |
+| `--bundles-mrs-only` | boolean flag (`store_true`) | absent (false) | when present, only Bundle file(s) + `MeasureReport.json` are written **locally**; `Organization.json` / `Device.json` / `Location.json` are skipped. FHIR-server persistence is unchanged (Bundle + standalone MeasureReport are the primary artifacts; Organization/Device/Location are still upserted as supporting resources the MeasureReport's references need) |
 
 ## State transitions
 

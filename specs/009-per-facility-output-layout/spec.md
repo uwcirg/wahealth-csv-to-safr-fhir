@@ -10,12 +10,12 @@
 The project constitution (v1.7.0, amended 2026-05-12) revised the **Clear, Predictable Output**
 principle in two ways:
 
-1. Individual (standalone) resource files MUST live in a per-facility subdirectory
+1. Individual resource files MUST live in a per-facility subdirectory
    `output/{YYYY-MM-DD}/{facility_name}/` rather than directly in the date directory, so a
    multi-facility (or multi-row) input file never overwrites one facility's individual resources
    with another's.
 2. The converter MUST offer an opt-in runtime flag `--bundles-mrs-only` that restricts output to
-   the Bundle and the standalone `MeasureReport.json` and skips the rarely-changing
+   the Bundle and the individual `MeasureReport.json` and skips the rarely-changing
    `Organization.json`, `Device.json`, and `Location.json` files; the flag MUST be documented in
    `README.md` and surfaced in `--help`.
 
@@ -27,9 +27,9 @@ that revised principle.
 ### User Story 1 - Isolated individual resources per facility (Priority: P1)
 
 A surveillance analyst converts a multi-hospital CSV file. For every (facility, reporting date) row
-the converter writes the facility's standalone `Organization.json`, `Device.json`,
+the converter writes the facility's individual `Organization.json`, `Device.json`,
 `MeasureReport.json`, and `Location.json` into a subdirectory named for that facility, so no
-facility's debugging artifacts clobber another's, and the owning facility of any individual resource
+facility's individual resources clobber another's, and the owning facility of any individual resource
 file is unambiguous from its path.
 
 **Why this priority**: This is the core correctness fix in the constitution change — without it,
@@ -57,7 +57,7 @@ resources).
 ### User Story 2 - Bundles-and-MeasureReports-only output mode (Priority: P2)
 
 An operator who runs the converter routinely and only cares about the submission payload passes
-`--bundles-mrs-only`. The converter writes the Bundle file(s) and the standalone
+`--bundles-mrs-only`. The converter writes the Bundle file(s) and the individual
 `MeasureReport.json` for each facility but skips writing `Organization.json`, `Device.json`, and
 `Location.json`.
 
@@ -78,7 +78,11 @@ and no `Organization.json` / `Device.json` / `Location.json` files exist anywher
 3. **Given** `--help` is invoked, **When** the help text is shown, **Then** `--bundles-mrs-only` is
    listed with a description of its effect.
 4. **Given** FHIR server persistence is also requested, **When** `--bundles-mrs-only` is supplied,
-   **Then** server persistence is unaffected (the flag governs only which local files are written).
+   **Then** the Bundle and the standalone MeasureReport are persisted as the primary artifacts and
+   the Organization, Device, and Location are still upserted as supporting resources (the Bundle is
+   self-contained and the standalone MeasureReport's `subject`/`reporter` references require the
+   Location/Organization to exist on the server) — i.e. the flag governs which **local files** are
+   written, not what is persisted.
 
 ---
 
@@ -93,7 +97,7 @@ and no `Organization.json` / `Device.json` / `Location.json` files exist anywher
   today's per-row overwrite behavior, but now scoped to that one facility rather than all
   facilities).
 - **`--bundles-mrs-only` with a format that carries HRD columns**: The flag affects only which of
-  the standalone Organization/Device/Location files are written; the Bundle and MeasureReport
+  the individual Organization/Device/Location files are written; the Bundle and MeasureReport
   content (including any HRD data) is unchanged.
 - **Empty or header-only input**: No data rows means no output directories are created — unchanged.
 
@@ -104,7 +108,7 @@ and no `Organization.json` / `Device.json` / `Location.json` files exist anywher
 - **FR-001**: For each (facility, reporting date) data row, the converter MUST write the Bundle file
   as `output/{YYYY-MM-DD}/{facility_name}.{YYYY-MM-DD}.BedCapacity.json` — directly in the date
   directory.
-- **FR-002**: The converter MUST write each row's standalone `Organization.json`, `Device.json`,
+- **FR-002**: The converter MUST write each row's individual `Organization.json`, `Device.json`,
   `MeasureReport.json`, and `Location.json` into the per-facility subdirectory
   `output/{YYYY-MM-DD}/{facility_name}/`, never directly into the date directory.
 - **FR-003**: The per-facility subdirectory name MUST be derived from the facility name using the
@@ -112,15 +116,20 @@ and no `Organization.json` / `Device.json` / `Location.json` files exist anywher
 - **FR-004**: Processing a multi-facility or multi-row input file MUST NOT cause one facility's
   individual resource files to overwrite another facility's.
 - **FR-005**: The converter MUST accept an opt-in runtime flag `--bundles-mrs-only`. When supplied,
-  it MUST write only the Bundle file(s) and the standalone `MeasureReport.json` for each facility,
+  it MUST write only the Bundle file(s) and the individual `MeasureReport.json` for each facility,
   and MUST NOT write `Organization.json`, `Device.json`, or `Location.json`.
 - **FR-006**: When `--bundles-mrs-only` is absent (the default), the converter MUST write the full
   set of individual resources in the layout from FR-002.
 - **FR-007**: `--bundles-mrs-only` MUST appear in the converter's `--help` output with a
   description of its effect.
-- **FR-008**: `--bundles-mrs-only` MUST NOT change FHIR server persistence behavior, Bundle
-  contents, MeasureReport contents, logging, or exit codes — it governs only which local individual
-  resource files are written.
+- **FR-008a**: `--bundles-mrs-only` MUST NOT alter Bundle contents, MeasureReport contents, the
+  logging format, or exit codes — it governs only which local individual resource files are written.
+- **FR-008b**: `--bundles-mrs-only` MUST NOT alter FHIR server persistence behavior. The Bundle and
+  the standalone MeasureReport are the primary persisted artifacts; the Organization, Device, and
+  Location continue to be upserted as supporting resources (the standalone MeasureReport's
+  `subject`/`reporter` references require the Location/Organization to exist on the server, and the
+  Bundle already carries all of them inline). Net effect: the same resource set is upserted whether
+  or not the flag is present — the flag only changes which local files are written.
 - **FR-009**: `README.md` MUST be updated to describe the per-facility subdirectory layout and the
   `--bundles-mrs-only` flag, replacing the current description of individual resources sharing the
   date directory.
@@ -130,7 +139,7 @@ and no `Organization.json` / `Device.json` / `Location.json` files exist anywher
 ### Key Entities *(include if feature involves data)*
 
 - **Output directory tree**: `output/` → date directory (`YYYY-MM-DD`) → contains Bundle file(s)
-  and one subdirectory per facility → each facility subdirectory contains that facility's standalone
+  and one subdirectory per facility → each facility subdirectory contains that facility's individual
   resource files (`Organization.json`, `Device.json`, `MeasureReport.json`, `Location.json`, subject
   to `--bundles-mrs-only`).
 - **Facility**: Identified by name (sanitized for use in both the Bundle filename and the
@@ -164,6 +173,9 @@ and no `Organization.json` / `Device.json` / `Location.json` files exist anywher
 - `--bundles-mrs-only` is a boolean flag (present / absent); there is no need for a value or for
   finer-grained selection of which individual resources to write.
 - FHIR server persistence continues to upsert the same resource set regardless of
-  `--bundles-mrs-only`.
+  `--bundles-mrs-only` (the Bundle and standalone MeasureReport are the primary artifacts;
+  Organization/Device/Location remain as supporting resources). Persistence builds its payloads from
+  the in-memory resources and rewrites references to server-assigned IDs — it does not read the
+  local JSON files — so reducing the local file set does not change what is sent to the server.
 - Existing behavior not mentioned here (header-based format detection, logging to console and
   timestamped file, exit-on-unrecognized-header, HRD handling) is unchanged.

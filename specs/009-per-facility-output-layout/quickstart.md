@@ -36,8 +36,10 @@ python3 convert.py input/<multi-facility-fixture>.csv --config config.example.js
    are present.
 4. **Tests** — `cd` to repo root, run `pytest` (incl. the new `tests/test_output_layout.py`) and
    `ruff check .`.
-5. **FHIR validation** — run the four-step pipeline in `CLAUDE.md` against the new-layout output;
-   expect zero project-introduced errors (only the two known upstream patterns may appear).
+5. **FHIR validation** — run the four-step pipeline in `CLAUDE.md` against the new-layout output,
+   passing the validator `$(find output -name '*.json')` (the `output/**/*.json` glob misses the
+   new 3-level per-facility files without `shopt -s globstar`); expect zero project-introduced
+   errors (only the two known upstream patterns may appear).
 6. **Docs** — README "Output" section and options table describe the subdirectory layout and
    `--bundles-mrs-only`; constitution's pending README follow-up TODO is cleared.
 

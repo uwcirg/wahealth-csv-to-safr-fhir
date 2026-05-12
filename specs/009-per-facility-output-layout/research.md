@@ -23,9 +23,10 @@ and the existing code in `convert.py`.
 ## Decision 2: `--bundles-mrs-only` flag
 
 - **Decision**: Add `parser.add_argument("--bundles-mrs-only", action="store_true", help=...)`.
-  When `args.bundles_mrs_only` is true, skip writing any individual resource whose `resourceType`
-  is not `MeasureReport`; always write the Bundle. The per-facility subdirectory is still created
-  (it holds `MeasureReport.json`). FHIR-server persistence code is untouched.
+  When `args.bundles_mrs_only` is true, skip writing any **local** individual resource file whose
+  `resourceType` is not `MeasureReport`; always write the Bundle. The per-facility subdirectory is
+  still created (it holds `MeasureReport.json`). The **FHIR-server persistence block is left
+  untouched** — see Decision 5.
 - **Rationale**: `store_true` boolean is the simplest faithful implementation of an opt-in flag
   (spec assumption); gating on `resourceType` keeps the change inside the existing
   `for entry in bundle["entry"]` loop.
@@ -33,6 +34,30 @@ and the existing code in `convert.py`.
   - A value-taking option like `--skip-resources Organization,Device,Location` — rejected as
     over-engineered; the constitution specifies exactly one mode.
   - Making it the default — rejected; the constitution says the default writes the full set.
+
+## Decision 5: `--bundles-mrs-only` and FHIR server persistence
+
+- **Decision**: The flag governs only which **local files** are written. Server persistence is
+  unchanged: `upsert_bundle` (self-contained Bundle) and `upsert_measure_report` (standalone
+  MeasureReport) are the primary persisted artifacts, and `upsert_organization` /
+  `upsert_location` / `upsert_device` continue to run as supporting upserts because
+  `upsert_measure_report` needs the server-assigned Organization and Location references for the
+  MeasureReport's `reporter`/`subject` (and the Bundle carries all of them inline anyway). So the
+  same resource set is upserted whether or not the flag is present (confirmed with the user
+  2026-05-12).
+- **Rationale (why persistence does not read the local JSON files)**: The `upsert_*` functions
+  build their payloads from the in-memory `record` / `profile` / `config` / `bundle` objects and do
+  *search → create-or-update*, rewriting references to server-assigned IDs as they go (e.g. the
+  persisted MeasureReport points at `Location/<server-id>`). The on-disk JSON files are
+  pre-persistence resources without server IDs, so they are not a usable input for upsert. Thus
+  "what's on disk" and "what's persisted" hold the same *content* derived from the same source;
+  only the *set* of artifacts could diverge if one channel were gated and the other not — which is
+  why we deliberately do **not** gate the persistence channel.
+- **Alternatives considered**:
+  - Persist only the Bundle when the flag is set — rejected; loses the individually-addressable
+    MeasureReport on the server for no real footprint gain (the Bundle still carries everything).
+  - Persist Bundle + MeasureReport but skip Organization/Location upserts — rejected; the standalone
+    MeasureReport's references would dangle (or silently rely on a prior full run).
 
 ## Decision 3: `--help` and README
 

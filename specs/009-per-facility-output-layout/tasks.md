@@ -66,7 +66,7 @@ CSV fixtures live in `input/` (including a multi-facility fixture). Generated ou
 
 ## Phase 4: User Story 2 - Bundles-and-MeasureReports-only output mode (Priority: P2)
 
-**Goal**: An opt-in `--bundles-mrs-only` flag restricts local output to the Bundle file(s) and each facility's `MeasureReport.json`, skipping `Organization.json`, `Device.json`, `Location.json`. Default (flag absent) writes the full set. FHIR-server persistence is unaffected. Flag appears in `--help`.
+**Goal**: An opt-in `--bundles-mrs-only` flag restricts **local** output to the Bundle file(s) and each facility's `MeasureReport.json`, skipping the local `Organization.json`, `Device.json`, `Location.json`. Default (flag absent) writes the full local set. FHIR-server persistence is unchanged in either mode (Bundle + standalone MeasureReport are the primary persisted artifacts; Organization/Device/Location are still upserted as supporting resources the MeasureReport's references require). Flag appears in `--help`.
 
 **Independent Test**: Run the converter on any fixture with `--bundles-mrs-only`; assert the Bundle file(s) exist, each facility subdirectory contains only `MeasureReport.json`, and no `Organization.json`/`Device.json`/`Location.json` exists anywhere under the output dir; `python3 convert.py --help` lists `--bundles-mrs-only`.
 
@@ -74,12 +74,13 @@ CSV fixtures live in `input/` (including a multi-facility fixture). Generated ou
 
 - [ ] T006 [P] [US2] In `tests/test_output_layout.py`: add a test that runs the converter with `--bundles-mrs-only` against a fixture in `input/`, then asserts (a) the Bundle file(s) exist in `{tmp}/{date}/`, (b) each `{tmp}/{date}/{facility}/` contains `MeasureReport.json`, (c) `find` over `{tmp}` yields zero `Organization.json`, `Device.json`, and `Location.json` files.
 - [ ] T007 [P] [US2] In `tests/test_output_layout.py`: add a test asserting that without `--bundles-mrs-only` the full set of four individual resources is still written (regression guard for the default), and a test asserting `convert.py --help` output (capture via subprocess) contains the string `--bundles-mrs-only`.
+- [ ] T007a [P] [US2] In `tests/test_output_layout.py`: add a regression test that runs the converter on a fixture **with** and **without** `--bundles-mrs-only` (no `--fhir-server`) and asserts the process exits 0 in both cases and the generated **Bundle file bytes are identical** between the two runs (FR-008a — the flag must not alter Bundle/MeasureReport contents). FR-008b (server persistence unchanged) is covered by code review of T009 — the FHIR-server block is untouched — not by a live-server test.
 
 ### Implementation for User Story 2
 
-- [ ] T008 [US2] In `convert.py` `main()` `argparse` setup (around lines 823–831): add `parser.add_argument("--bundles-mrs-only", action="store_true", help="Write only the Bundle and MeasureReport.json for each facility; skip the rarely-changing Organization.json, Device.json, and Location.json files.")`.
-- [ ] T009 [US2] In `convert.py` `main()` row loop, in the `for entry in bundle["entry"]` block: when `args.bundles_mrs_only` is true, skip writing any resource whose `resourceType` is not `MeasureReport` (always write the Bundle and `MeasureReport.json`). Leave the FHIR-server persistence block (around lines 900–921) untouched.
-- [ ] T010 [US2] Run `tests/test_output_layout.py` (T006, T007) plus the full `pytest` suite and `ruff check .`; confirm pass.
+- [ ] T008 [US2] In `convert.py` `main()` `argparse` setup (around lines 823–831): add `parser.add_argument("--bundles-mrs-only", action="store_true", help="Write only the Bundle and MeasureReport.json for each facility locally; skip the rarely-changing Organization.json, Device.json, and Location.json files. Does not change what is persisted to a --fhir-server.")`.
+- [ ] T009 [US2] In `convert.py` `main()` row loop, in the `for entry in bundle["entry"]` block: when `args.bundles_mrs_only` is true, skip writing any **local** resource file whose `resourceType` is not `MeasureReport` (always write the Bundle and `MeasureReport.json`). Leave the FHIR-server persistence block (around lines 900–921) **entirely untouched** — Organization/Device/Location must still be upserted there because `upsert_measure_report` needs their server references.
+- [ ] T010 [US2] Run `tests/test_output_layout.py` (T006, T007, T007a) plus the full `pytest` suite and `ruff check .`; confirm pass.
 
 **Checkpoint**: Both user stories work independently; default behavior unchanged except for the new subdirectory location.
 
@@ -89,8 +90,9 @@ CSV fixtures live in `input/` (including a multi-facility fixture). Generated ou
 
 - [ ] T011 [P] Update `README.md` "Output" section (around lines 34–42): describe `output/{date}/{facility_name}/` for individual resources, the Bundle staying in `output/{date}/`, and that multi-facility input no longer overwrites individual resources. Add a `--bundles-mrs-only` row to the options table (around lines 27–30) and mention it in the Output section. Ensure wording matches `contracts/cli.md`.
 - [ ] T012 Remove the README "Follow-up TODOs" item in `.specify/memory/constitution.md`'s Sync Impact Report block that says the README update is pending (it is now done), or note that it is resolved — coordinate with the user before editing the constitution file.
-- [ ] T013 Run the mandatory FHIR validation pipeline from `CLAUDE.md`: convert every non-`*column-labels-only*` fixture in `input/` to `output/`, extract `SAFR_IG_VERSION` and `NHSN_SAFR_IG_VERSION`, run `java -jar validator_cli.jar output/**/*.json -version 4.0.1 -ig hl7.fhir.us.safr#$SAFR_IG_VERSION -ig https://safr-ci.nhsnlink.org/package.tgz`. Confirm zero errors other than the two known upstream patterns. If `validator_cli.jar`/Java is unavailable, inform the user immediately rather than skipping.
+- [ ] T013 Run the mandatory FHIR validation pipeline from `CLAUDE.md`: convert every non-`*column-labels-only*` fixture in `input/` to `output/`, extract `SAFR_IG_VERSION` and `NHSN_SAFR_IG_VERSION`, then validate **all** generated JSON regardless of nesting depth — `java -jar validator_cli.jar $(find output -name '*.json') -version 4.0.1 -ig hl7.fhir.us.safr#$SAFR_IG_VERSION -ig https://safr-ci.nhsnlink.org/package.tgz` (the new per-facility subdirectories add a third path level that the `output/**/*.json` glob does not match without `shopt -s globstar`). Confirm zero errors other than the two known upstream patterns. If `validator_cli.jar`/Java is unavailable, inform the user immediately rather than skipping.
 - [ ] T014 Run `quickstart.md` verification steps end-to-end (layout, isolation, flag, tests, validation, docs) and confirm all pass.
+- [ ] T015 Propose to the user an update to the manual "LLM Validation Pipeline" section of `CLAUDE.md` (and the matching `java`/`grep` lines in `.github/workflows/ci.yml` if present): replace `output/**/*.json` with `$(find output -name '*.json')` (or add `shopt -s globstar`) so Step 3 reaches the per-facility-subdirectory resource files. Do not edit `CLAUDE.md` or CI without user confirmation.
 
 ---
 
@@ -101,7 +103,7 @@ CSV fixtures live in `input/` (including a multi-facility fixture). Generated ou
 - **Setup (Phase 1)**: no dependencies — start immediately.
 - **Foundational (Phase 2)**: empty — nothing to do.
 - **User Story 1 (Phase 3)**: depends on Setup.
-- **User Story 2 (Phase 4)**: depends on Setup; T009 edits the same `for entry in bundle["entry"]` block changed by US1's T004, so US2 implementation should follow US1 implementation (or be merged carefully). US2's tests/help (T006–T008) are independent of US1.
+- **User Story 2 (Phase 4)**: depends on Setup; T009 edits the same `for entry in bundle["entry"]` block changed by US1's T004, so US2 implementation should follow US1 implementation (or be merged carefully). US2's tests/help (T006, T007, T007a) are independent of US1.
 - **Polish (Phase 5)**: depends on US1 and US2 implementation being complete (T013/T014 validate the combined result).
 
 ### Within Each User Story
@@ -111,7 +113,7 @@ CSV fixtures live in `input/` (including a multi-facility fixture). Generated ou
 ### Parallel Opportunities
 
 - T002 and T003 ([P] [US1]) can be written in parallel.
-- T006 and T007 ([P] [US2]) can be written in parallel.
+- T006, T007, and T007a ([P] [US2]) can be written in parallel.
 - T011 ([P], README) can proceed in parallel with T013 once code is done.
 - US1 and US2 *test-writing* can overlap; their *implementation* edits to `convert.py` `main()` should be sequenced to avoid merge conflicts in the row loop.
 
@@ -146,5 +148,5 @@ Task: "test_output_layout.py — multi-facility no-overwrite assertions (T003)"
 
 - [P] = different files / independent; the two `convert.py` `main()` edits (T004, T009) are in the same function and are NOT [P] relative to each other.
 - Reuse `sanitize_filename` unchanged so the facility subdirectory name equals the `{facility_name}` segment of the Bundle filename (FR-003).
-- Do not alter FHIR-server persistence, Bundle/MeasureReport contents, logging format, or exit codes (FR-008).
+- Do not alter FHIR-server persistence, Bundle/MeasureReport contents, logging format, or exit codes (FR-008a/FR-008b). `--bundles-mrs-only` only suppresses *local* individual-resource file writes; the persistence block keeps upserting Organization/Device/Location because `upsert_measure_report` needs their server references.
 - Commit after each task or logical group; re-run `ruff check .` before committing.

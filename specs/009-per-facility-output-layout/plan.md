@@ -35,7 +35,7 @@ and tests
 | Principle | Status | Notes |
 |-----------|--------|-------|
 | Stdlib-only runtime | ✅ PASS | Uses `os.path` / `os.makedirs` / `argparse` only |
-| Validation-Driven Testing | ✅ PASS | Tests added for new layout + flag; full FHIR validation pipeline (CLAUDE.md) re-run; existing per-format fixtures unchanged |
+| Validation-Driven Testing | ✅ PASS | Tests added for new layout + flag; full FHIR validation pipeline (CLAUDE.md) re-run, invoking the validator via `find output -name '*.json'` so the new 3-level per-facility files are covered (a 2-level `output/**/*.json` glob would miss them); existing per-format fixtures unchanged |
 | Clear, Predictable Output | ✅ PASS | This feature *implements* the revised rule: per-facility subdirectory + `--bundles-mrs-only` flag, both documented in README and `--help` |
 | Scope — Bed Capacity & HRD Surveillance | ✅ PASS | No measure-domain change; only file layout / CLI |
 | Multi-Format CSV Input | ✅ PASS | Format detection and internal row model untouched |
