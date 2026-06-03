@@ -19,7 +19,7 @@ python3 convert.py input.csv
 ## Usage
 
 ```
-python3 convert.py input.csv [--config config.json] [--output-dir ./output] [--fhir-server URL] [--bundles-mrs-only]
+python3 convert.py input.csv [--config config.json] [--output-dir ./output] [--fhir-server URL] [--bundles-mrs-only] [--fuzz [--fuzz-seed N] [--fuzz-magnitude M]]
 ```
 
 | Flag | Default | Description |
@@ -29,8 +29,47 @@ python3 convert.py input.csv [--config config.json] [--output-dir ./output] [--f
 | `--output-dir` | `./output` | Directory for generated JSON files |
 | `--fhir-server` | *(none)* | FHIR server base URL (e.g. `http://localhost:8080/fhir`) |
 | `--bundles-mrs-only` | *(off)* | Write only the Bundle and `MeasureReport.json` for each facility; skip the rarely-changing `Organization.json`, `Device.json`, `Location.json`. Affects local files only — `--fhir-server` persistence is unchanged. |
+| `--fuzz` | *(off)* | Obfuscate counts: replace the real bed/ED counts with realistic but **fake** values. See [Count fuzzing](#count-fuzzing). |
+| `--fuzz-seed` | *(random)* | Integer seed for reproducible fuzzing (e.g. `42`). Any value works; omit for a random, non-reproducible run. Only used with `--fuzz`. |
+| `--fuzz-magnitude` | `0.15` | Max proportional perturbation per count, range `(0, 1]` (`0.15` = ±15%; suggested `0.05`–`0.25`). Only used with `--fuzz`. |
 
 The input CSV layout is **auto-detected from its header row** — see [Input CSV formats](#input-csv-formats). An unrecognized header is a hard error: the converter exits without writing any output.
+
+## Count fuzzing
+
+> ⚠️ **Fuzzed output is not real data.** When `--fuzz` is on, the converter logs a prominent
+> WARNING. Never submit fuzzed output as an authentic report.
+
+`--fuzz` replaces the real bed-occupancy/capacity and emergency-department counts with
+**plausible but fake** numbers during FHIR generation, so output can be shared or demoed
+without exposing a facility's true operational data. It is **off by default** — output is
+unchanged unless you opt in.
+
+Input is consumed exactly as normal; only the counts are perturbed, and the result stays
+realistic:
+
+- every count is a non-negative integer,
+- occupied never exceeds capacity (when the source data was consistent),
+- aggregates (all beds, adult/peds/specialty totals, total ED) still equal the sum of their
+  fuzzed parts — no contradictory numbers,
+- only count values change; resource structure, codes, references, dates, and facility data
+  are untouched.
+
+Each count is perturbed by up to ±`--fuzz-magnitude` (default ±15%); very small counts get a
+small absolute jitter so they are still obfuscated, and a true `0` stays `0`. Pass a fixed
+`--fuzz-seed` to reproduce the same fuzzed numbers across runs (useful for stable demos and
+tests); omit it for a one-off, non-reproducible run.
+
+```bash
+# Real output (default)
+python3 convert.py input.csv --config config.json --output-dir output
+
+# Fuzzed, reproducible
+python3 convert.py input.csv --config config.json --output-dir output --fuzz --fuzz-seed 42
+
+# Fuzzed, wider spread, non-reproducible
+python3 convert.py input.csv --config config.json --output-dir output --fuzz --fuzz-magnitude 0.25
+```
 
 ## Output
 

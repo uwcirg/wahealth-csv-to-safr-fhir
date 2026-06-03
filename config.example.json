@@ -70,5 +70,6 @@
     "token_endpoint": "YOUR_TOKEN_ENDPOINT",
     "client_id": "YOUR_CLIENT_ID",
     "client_secret": "YOUR_CLIENT_SECRET"
-  }
+  },
+  "_fuzz_note": "Count fuzzing is controlled by the --fuzz, --fuzz-seed, and --fuzz-magnitude CLI flags (off by default), not by this config file. It replaces real bed/ED counts with realistic but FAKE values for sharing/demos and must NEVER be used for a real submission. --fuzz-magnitude range is (0,1]; default 0.15 (+/-15%), suggested 0.05-0.25. Omit --fuzz-seed for a random, non-reproducible run, or pass any integer (e.g. 42) to reproduce."
 }

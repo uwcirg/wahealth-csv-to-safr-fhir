@@ -36,7 +36,7 @@ relative to `convert.py` work but sequential relative to each other (same file).
 
 **Purpose**: Test scaffolding shared by all stories
 
-- [ ] T001 Create `tests/test_fuzz.py` with a reusable sample normalized-row fixture (all 8 `ALL_BED_AREAS` `{area}_occ`/`{area}_cap` keys plus `adult_ed`/`peds_ed`, a `facility_name`, and a `reporting_date`) and pytest scaffolding that imports the fuzz helpers from `convert.py`
+- [X] T001 Create `tests/test_fuzz.py` with a reusable sample normalized-row fixture (all 8 `ALL_BED_AREAS` `{area}_occ`/`{area}_cap` keys plus `adult_ed`/`peds_ed`, a `facility_name`, and a `reporting_date`) and pytest scaffolding that imports the fuzz helpers from `convert.py`
 
 ---
 
@@ -46,11 +46,11 @@ relative to `convert.py` work but sequential relative to each other (same file).
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Add a `FuzzConfig` holder (fields: `enabled` bool, `seed`, `magnitude` float=0.15, `small_count_floor` int=2) near the top of `convert.py`
-- [ ] T003 Add `--fuzz` (store_true), `--fuzz-seed` (int, no default), and `--fuzz-magnitude` (float, default 0.15) argparse flags in `main()` in `convert.py`, surfaced in `--help`. Help text MUST convey suggested usage: `--fuzz-seed` is any integer (e.g. 42; omit for a random non-reproducible run) and `--fuzz-magnitude` is range `(0,1]`, default 0.15, suggested 0.05–0.25 (per `contracts/cli-interface.md` "Suggested values")
-- [ ] T004 Validate `--fuzz-magnitude` is within `(0, 1]` in `main()` in `convert.py`; exit with a clear error message if out of range (contract C10)
-- [ ] T005 Construct a `FuzzConfig` from parsed args in `main()` in `convert.py` (CLI flags are the source of truth for v1; config-file parity is documentation-only — see T024)
-- [ ] T006 Add a `fuzz_record(record, fuzz_config)` function to `convert.py` that initially returns the record unchanged, and call it per row in the records loop in `main()` immediately before `build_bundle(...)` so both local-file and server-upsert paths consume the same (eventually fuzzed) record
+- [X] T002 Add a `FuzzConfig` holder (fields: `enabled` bool, `seed`, `magnitude` float=0.15, `small_count_floor` int=2) near the top of `convert.py`
+- [X] T003 Add `--fuzz` (store_true), `--fuzz-seed` (int, no default), and `--fuzz-magnitude` (float, default 0.15) argparse flags in `main()` in `convert.py`, surfaced in `--help`. Help text MUST convey suggested usage: `--fuzz-seed` is any integer (e.g. 42; omit for a random non-reproducible run) and `--fuzz-magnitude` is range `(0,1]`, default 0.15, suggested 0.05–0.25 (per `contracts/cli-interface.md` "Suggested values")
+- [X] T004 Validate `--fuzz-magnitude` is within `(0, 1]` in `main()` in `convert.py`; exit with a clear error message if out of range (contract C10)
+- [X] T005 Construct a `FuzzConfig` from parsed args in `main()` in `convert.py` (CLI flags are the source of truth for v1; config-file parity is documentation-only — see T024)
+- [X] T006 Add a `fuzz_record(record, fuzz_config)` function to `convert.py` that initially returns the record unchanged, and call it per row in the records loop in `main()` immediately before `build_bundle(...)` so both local-file and server-upsert paths consume the same (eventually fuzzed) record
 
 **Checkpoint**: Flags parse, `FuzzConfig` is built, and the per-row hook is wired (still a no-op). Existing output is unchanged.
 
@@ -68,19 +68,19 @@ and the FHIR validator reports zero project-introduced errors.
 
 ### Tests for User Story 1
 
-- [ ] T007 [US1] Add test: every fuzzed count field is a non-negative `int` (FR-005) in `tests/test_fuzz.py`
-- [ ] T008 [US1] Add test: when source `occ ≤ cap`, fuzzed `occ ≤ cap` for each bed area (FR-006) in `tests/test_fuzz.py`
-- [ ] T009 [US1] Add test: `compute_groups` aggregates (AllBeds/Adult/Peds/Specialty/Total ED) equal the sum of the fuzzed component counts (FR-007) in `tests/test_fuzz.py`
-- [ ] T010 [US1] Add test: non-zero counts are obfuscated (differ from truth) and the full true set is not reproduced (FR-004, SC-002) in `tests/test_fuzz.py`
-- [ ] T011 [US1] Add test: non-floor fuzzed values stay within `±magnitude` of truth; `n=0` stays `0`; small `n` (1–3) is changed (FR-008, FR-013) in `tests/test_fuzz.py`
+- [X] T007 [US1] Add test: every fuzzed count field is a non-negative `int` (FR-005) in `tests/test_fuzz.py`
+- [X] T008 [US1] Add test: when source `occ ≤ cap`, fuzzed `occ ≤ cap` for each bed area (FR-006) in `tests/test_fuzz.py`
+- [X] T009 [US1] Add test: `compute_groups` aggregates (AllBeds/Adult/Peds/Specialty/Total ED) equal the sum of the fuzzed component counts (FR-007) in `tests/test_fuzz.py`
+- [X] T010 [US1] Add test: non-zero counts are obfuscated (differ from truth) and the full true set is not reproduced (FR-004, SC-002) in `tests/test_fuzz.py`
+- [X] T011 [US1] Add test: non-floor fuzzed values stay within `±magnitude` of truth; `n=0` stays `0`; small `n` (1–3) is changed (FR-008, FR-013) in `tests/test_fuzz.py`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] In `fuzz_record` in `convert.py`, build a per-row PRNG `Random(f"{seed}|{stable_facility_key(record)}|{record['reporting_date']}")` for order-independent draws
-- [ ] T013 [US1] In `fuzz_record` in `convert.py`, implement the per-field rule: `n<=0 → 0`; tiny `n` → bounded absolute jitter via `small_count_floor` ensuring it differs from `n`; otherwise `round(n * uniform(1-m, 1+m))`; clamp all results to `>= 0`
-- [ ] T014 [US1] In `fuzz_record` in `convert.py`, fuzz each area's `_cap` then `_occ`, and clamp fuzzed `_occ ≤` fuzzed `_cap` only when the source row had `occ ≤ cap`; fuzz `adult_ed`/`peds_ed` independently; leave all non-count keys untouched (FR-011)
-- [ ] T015 [US1] In `main()` in `convert.py`, log a prominent WARNING when `fuzz_config.enabled` ("COUNT FUZZING ENABLED — counts are not real; do not submit as authentic data"), including magnitude and whether a fixed seed is set (FR-014, contract C9)
-- [ ] T016 [US1] Run the end-to-end FHIR validation pipeline (per `CLAUDE.md`) on output generated **with `--fuzz`**; confirm zero project-introduced errors (SC-004, contract C12)
+- [X] T012 [US1] In `fuzz_record` in `convert.py`, build a per-row PRNG `Random(f"{seed}|{stable_facility_key(record)}|{record['reporting_date']}")` for order-independent draws
+- [X] T013 [US1] In `fuzz_record` in `convert.py`, implement the per-field rule: `n<=0 → 0`; tiny `n` → bounded absolute jitter via `small_count_floor` ensuring it differs from `n`; otherwise `round(n * uniform(1-m, 1+m))`; clamp all results to `>= 0`
+- [X] T014 [US1] In `fuzz_record` in `convert.py`, fuzz each area's `_cap` then `_occ`, and clamp fuzzed `_occ ≤` fuzzed `_cap` only when the source row had `occ ≤ cap`; fuzz `adult_ed`/`peds_ed` independently; leave all non-count keys untouched (FR-011)
+- [X] T015 [US1] In `main()` in `convert.py`, log a prominent WARNING when `fuzz_config.enabled` ("COUNT FUZZING ENABLED — counts are not real; do not submit as authentic data"), including magnitude and whether a fixed seed is set (FR-014, contract C9)
+- [X] T016 [US1] Run the end-to-end FHIR validation pipeline (per `CLAUDE.md`) on output generated **with `--fuzz`**; confirm zero project-introduced errors (SC-004, contract C12)
 
 **Checkpoint**: Fuzzing produces realistic, obfuscated, conformant FHIR output. MVP delivered.
 
@@ -96,12 +96,12 @@ regression baseline with zero differences.
 
 ### Tests for User Story 2
 
-- [ ] T017 [US2] Add test: a `FuzzConfig` with `enabled=False` makes `fuzz_record` return counts identical to the input record (FR-009) in `tests/test_fuzz.py`
+- [X] T017 [US2] Add test: a `FuzzConfig` with `enabled=False` makes `fuzz_record` return counts identical to the input record (FR-009) in `tests/test_fuzz.py`
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] In `fuzz_record` in `convert.py`, short-circuit to return the record unchanged when `fuzz_config.enabled` is `False` (no PRNG, no mutation) — confirms the default path is inert
-- [ ] T019 [US2] Generate output without `--fuzz` and diff against the existing regression baseline (e.g. `specs/008-multi-format-csv-input/regression-baseline.json`); confirm zero differences (FR-010, SC-003)
+- [X] T018 [US2] In `fuzz_record` in `convert.py`, short-circuit to return the record unchanged when `fuzz_config.enabled` is `False` (no PRNG, no mutation) — confirms the default path is inert
+- [X] T019 [US2] Generate output without `--fuzz` and diff against the existing regression baseline (e.g. `specs/008-multi-format-csv-input/regression-baseline.json`); confirm zero differences (FR-010, SC-003)
 
 **Checkpoint**: Default runs are provably unchanged; fuzzing is strictly opt-in.
 
@@ -117,12 +117,12 @@ seed and confirm the counts differ.
 
 ### Tests for User Story 3
 
-- [ ] T020 [US3] Add test: same seed → identical fuzzed counts across two `fuzz_record` calls; different seed → different counts (FR-012, SC-005) in `tests/test_fuzz.py`
-- [ ] T021 [US3] Add test: row order independence — a row fuzzed alone reproduces the same counts it gets within a multi-row batch under the same seed (contract C11) in `tests/test_fuzz.py`
+- [X] T020 [US3] Add test: same seed → identical fuzzed counts across two `fuzz_record` calls; different seed → different counts (FR-012, SC-005) in `tests/test_fuzz.py`
+- [X] T021 [US3] Add test: row order independence — a row fuzzed alone reproduces the same counts it gets within a multi-row batch under the same seed (contract C11) in `tests/test_fuzz.py`
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] In `main()`/`FuzzConfig` in `convert.py`, when `--fuzz` is set without `--fuzz-seed`, derive a non-reproducible seed (`os.urandom`-based) and log a WARNING that output is not reproducible (research D3)
+- [X] T022 [US3] In `main()`/`FuzzConfig` in `convert.py`, when `--fuzz` is set without `--fuzz-seed`, derive a non-reproducible seed (`os.urandom`-based) and log a WARNING that output is not reproducible (research D3)
 
 **Checkpoint**: Seeded runs are reproducible; all three user stories function independently.
 
@@ -132,11 +132,11 @@ seed and confirm the counts differ.
 
 **Purpose**: Documentation, config parity, lint, and full conformance per the constitution
 
-- [ ] T023 [P] Document `--fuzz`, `--fuzz-seed`, `--fuzz-magnitude`, and the "not real data" warning in `README.md` (options table + a fuzzing section) — constitution: README as Living Documentation
-- [ ] T024 [P] Add an optional `"fuzz": { "enabled": false, "seed": null, "magnitude": 0.15 }` section to `config.example.json` documenting CLI-precedence parity (contract: config parity)
-- [ ] T025 [P] Run `ruff check .` and fix any lint issues introduced in `convert.py` / `tests/test_fuzz.py`
-- [ ] T026 Run the full LLM validation pipeline per `CLAUDE.md` over **all** `input/` fixtures both without `--fuzz` (baseline) and with `--fuzz --fuzz-seed <n>`; confirm zero project-introduced validator errors in both modes
-- [ ] T027 Execute the `quickstart.md` verification steps (disabled=baseline, enabled-changes-counts, reproducible, conformance) and confirm each passes
+- [X] T023 [P] Document `--fuzz`, `--fuzz-seed`, `--fuzz-magnitude`, and the "not real data" warning in `README.md` (options table + a fuzzing section) — constitution: README as Living Documentation
+- [X] T024 [P] Add an optional `"fuzz": { "enabled": false, "seed": null, "magnitude": 0.15 }` section to `config.example.json` documenting CLI-precedence parity (contract: config parity)
+- [X] T025 [P] Run `ruff check .` and fix any lint issues introduced in `convert.py` / `tests/test_fuzz.py`
+- [X] T026 Run the full LLM validation pipeline per `CLAUDE.md` over **all** `input/` fixtures both without `--fuzz` (baseline) and with `--fuzz --fuzz-seed <n>`; confirm zero project-introduced validator errors in both modes
+- [X] T027 Execute the `quickstart.md` verification steps (disabled=baseline, enabled-changes-counts, reproducible, conformance) and confirm each passes
 
 ---
 
