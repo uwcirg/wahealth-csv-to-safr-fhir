@@ -33,6 +33,7 @@ import csv
 import json
 import logging
 import os
+import random
 import re
 import sys
 import uuid
@@ -143,6 +144,36 @@ BED_MAPPINGS = [
 ]
 
 
+# --- Count fuzzing ---
+#
+# Opt-in obfuscation that replaces the real bed/ED counts with realistic-but-fake
+# values during FHIR generation, so output can be shared or demoed without exposing a
+# facility's true operational numbers. Input is consumed exactly as normal; only the
+# base count fields of the already-normalized row are perturbed (see fuzz_record).
+# Unoccupied beds and all aggregates are derived from those base fields downstream by
+# compute_groups, so perturbing the base values keeps every derived count internally
+# consistent and preserves occupied <= capacity. Fuzzing is OFF by default.
+
+FUZZ_DEFAULT_MAGNITUDE = 0.15        # +/-15% proportional perturbation
+FUZZ_DEFAULT_SMALL_FLOOR = 2         # absolute jitter bound for very small counts
+# Counts at or below this threshold get a bounded *absolute* jitter instead of a
+# proportional one, so a true value like 2 is actually obfuscated rather than left
+# unchanged by a percentage that rounds back to itself.
+FUZZ_SMALL_COUNT_THRESHOLD = 5
+FUZZ_ED_FIELDS = ("adult_ed", "peds_ed")
+
+
+class FuzzConfig:
+    """Runtime parameters for count fuzzing. Inert (a no-op) when `enabled` is False."""
+
+    def __init__(self, enabled=False, seed=None, magnitude=FUZZ_DEFAULT_MAGNITUDE,
+                 small_count_floor=FUZZ_DEFAULT_SMALL_FLOOR):
+        self.enabled = enabled
+        self.seed = seed
+        self.magnitude = magnitude
+        self.small_count_floor = small_count_floor
+
+
 def load_config(path):
     """Read and validate config.json."""
     with open(path, "r") as f:
@@ -234,6 +265,75 @@ def build_group(concept_name, display, count):
             "count": count,
         }],
     }
+
+
+def _fuzz_count(value, rng, magnitude, small_count_floor):
+    """Perturb a single non-negative count, returning a non-negative int.
+
+    A true zero stays zero (an empty unit must still look empty). Small counts get a
+    bounded absolute jitter so they are genuinely obfuscated rather than rounded back to
+    the truth; larger counts get a proportional jitter within +/- magnitude. See
+    research.md D2.
+    """
+    if value <= 0:
+        return 0
+    if value <= FUZZ_SMALL_COUNT_THRESHOLD:
+        delta = rng.randint(-small_count_floor, small_count_floor)
+        if delta == 0:
+            delta = 1  # ensure the value actually changes
+        return max(0, value + delta)
+    factor = rng.uniform(1 - magnitude, 1 + magnitude)
+    return max(0, round(value * factor))
+
+
+def fuzz_record(record, fuzz_config):
+    """Return `record` with its count fields perturbed per `fuzz_config`.
+
+    When fuzzing is disabled this returns the record unchanged (identity), so the
+    default code path is byte-for-byte what it was before this feature.
+
+    Only the base count fields are altered: each bed area's `_occ`/`_cap` and the ED
+    census fields. Unoccupied beds and all aggregates are derived from these downstream
+    by compute_groups, so perturbing the base values keeps every derived count
+    internally consistent (aggregate == sum of fuzzed parts) and preserves
+    occupied <= capacity. Non-count fields are passed through untouched.
+    """
+    if not fuzz_config.enabled:
+        return record
+
+    fuzzed = copy.deepcopy(record)
+    # Per-row PRNG keyed by the run seed plus the row's stable identity, so the same
+    # input + seed reproduces identical counts regardless of row order (research.md D3).
+    rng = random.Random(
+        f"{fuzz_config.seed}|{stable_facility_key(record)}|{record.get('reporting_date')}"
+    )
+    mag = fuzz_config.magnitude
+    floor = fuzz_config.small_count_floor
+
+    for area in ALL_BED_AREAS:
+        occ_key, cap_key = f"{area}_occ", f"{area}_cap"
+        has_occ, has_cap = occ_key in record, cap_key in record
+        if not (has_occ or has_cap):
+            continue
+        source_occ = record.get(occ_key, 0)
+        source_cap = record.get(cap_key, 0)
+        new_cap = _fuzz_count(source_cap, rng, mag, floor)
+        new_occ = _fuzz_count(source_occ, rng, mag, floor)
+        # Preserve occupied <= capacity only when the source row was itself consistent;
+        # a source that already reported occ > cap is a real data-quality signal we do
+        # not invent away (constitution: Data Integrity).
+        if source_occ <= source_cap:
+            new_occ = min(new_occ, new_cap)
+        if has_occ:
+            fuzzed[occ_key] = new_occ
+        if has_cap:
+            fuzzed[cap_key] = new_cap
+
+    for ed_key in FUZZ_ED_FIELDS:
+        if ed_key in record:
+            fuzzed[ed_key] = _fuzz_count(record.get(ed_key, 0), rng, mag, floor)
+
+    return fuzzed
 
 
 def compute_groups(record):
@@ -832,6 +932,16 @@ def main():
                         help="Write only the Bundle and MeasureReport.json for each facility locally; "
                              "skip the rarely-changing Organization.json, Device.json, and Location.json "
                              "files. Does not change what is persisted to a --fhir-server.")
+    parser.add_argument("--fuzz", action="store_true",
+                        help="Obfuscate counts: replace the real bed/ED counts with realistic but FAKE "
+                             "values during FHIR generation. Off by default. Output is NOT real data; "
+                             "a warning is logged whenever this is active.")
+    parser.add_argument("--fuzz-seed", type=int, default=None, metavar="N",
+                        help="Integer seed for reproducible fuzzing (e.g. 42). Any value works; omit for "
+                             "a random, non-reproducible run. Only used with --fuzz.")
+    parser.add_argument("--fuzz-magnitude", type=float, default=FUZZ_DEFAULT_MAGNITUDE, metavar="M",
+                        help="Max proportional perturbation per count, range (0,1] "
+                             "(default %(default)s = +/-15%%; suggested 0.05-0.25). Only used with --fuzz.")
     args = parser.parse_args()
 
     # --- Set up logging ---
@@ -848,6 +958,27 @@ def main():
     logger.setLevel(logging.INFO)
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
+
+    # --- Count fuzzing setup ---
+    if args.fuzz and not (0 < args.fuzz_magnitude <= 1):
+        logger.error("--fuzz-magnitude must be within (0, 1]; got %s", args.fuzz_magnitude)
+        sys.exit(1)
+
+    fuzz_seed = args.fuzz_seed
+    if args.fuzz and fuzz_seed is None:
+        # No fixed seed given: derive a random, non-reproducible one so each run differs.
+        fuzz_seed = int.from_bytes(os.urandom(8), "big")
+    fuzz_config = FuzzConfig(enabled=args.fuzz, seed=fuzz_seed, magnitude=args.fuzz_magnitude)
+
+    if fuzz_config.enabled:
+        logger.warning(
+            "COUNT FUZZING ENABLED — output counts are obfuscated and NOT real; do not "
+            "submit as authentic data. magnitude=%s (+/-%.0f%%), seed=%s",
+            fuzz_config.magnitude, fuzz_config.magnitude * 100,
+            "random (not reproducible)" if args.fuzz_seed is None else fuzz_config.seed,
+        )
+    elif args.fuzz_seed is not None or args.fuzz_magnitude != FUZZ_DEFAULT_MAGNITUDE:
+        logger.info("--fuzz-seed/--fuzz-magnitude ignored because --fuzz was not set")
 
     config = load_config(args.config)
     # Detect format and parse rows *before* creating any output — an unrecognized
@@ -878,6 +1009,9 @@ def main():
     dev_ref = None
 
     for i, record in enumerate(records):
+        # Obfuscate counts if requested (no-op when fuzzing is disabled). Applied here so
+        # both the local files and any --fhir-server persistence below use the same values.
+        record = fuzz_record(record, fuzz_config)
         bundle, reporting_date, profile, unregistered = build_bundle(record, config, descriptor)
         facility_name = sanitize_filename(record.get("facility_name") or f"facility_{i}")
         date_str = reporting_date.strftime("%Y-%m-%d")
