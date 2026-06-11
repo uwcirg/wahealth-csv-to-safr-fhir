@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
 import os
 import sys
@@ -13,7 +14,30 @@ TOKEN_CACHE_FILE = Path(".oauth_token.json")
 TOKEN_REFRESH_SKEW_SECONDS = 60  # refresh 1 minute early
 
 
-def request_token():
+def load_client_secret(secret_file: Path | None) -> str:
+    """Load OAuth client secret from a file or CLIENT_SECRET environment variable."""
+
+    if secret_file is not None:
+        if not secret_file.is_file():
+            print(f"Client secret file not found: {secret_file}", file=sys.stderr)
+            sys.exit(1)
+        secret = secret_file.read_text().strip()
+        if not secret:
+            print(f"Client secret file is empty: {secret_file}", file=sys.stderr)
+            sys.exit(1)
+        return secret
+
+    secret = os.environ.get("CLIENT_SECRET", "").strip()
+    if not secret:
+        print(
+            "Client secret required: set CLIENT_SECRET or pass --client-secret-file",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return secret
+
+
+def request_token(client_secret: str):
     """Request a new OAuth2 access token using client_credentials."""
 
     token_endpoint = os.environ["TOKEN_ENDPOINT"]
@@ -24,7 +48,7 @@ def request_token():
             "grant_type": "client_credentials",
             "scope": "default",
             "client_id": os.environ["CLIENT_ID"],
-            "client_secret": os.environ["CLIENT_SECRET"],
+            "client_secret": client_secret,
         },
         timeout=30,
     )
@@ -68,7 +92,7 @@ def jwt_is_expired(token):
         return True
 
 
-def get_access_token():
+def get_access_token(client_secret: str):
     """Load cached token if valid; otherwise request a new one."""
 
     if TOKEN_CACHE_FILE.exists():
@@ -82,13 +106,13 @@ def get_access_token():
         except Exception:
             pass
 
-    return request_token()
+    return request_token(client_secret)
 
 
-def submit_fhir_bundle(bundle_path):
+def submit_fhir_bundle(bundle_path, client_secret: str):
     """Submit a FHIR bundle file."""
 
-    token = get_access_token()
+    token = get_access_token(client_secret)
 
     with open(bundle_path, "rb") as f:
         response = requests.post(
@@ -103,7 +127,7 @@ def submit_fhir_bundle(bundle_path):
 
     # Retry once if token unexpectedly expired or was revoked
     if response.status_code == 401:
-        token = request_token()
+        token = request_token(client_secret)
 
         with open(bundle_path, "rb") as f:
             response = requests.post(
@@ -122,12 +146,27 @@ def submit_fhir_bundle(bundle_path):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} bundle1.json [bundle2.json ...]")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Upload FHIR bundle JSON files to a FHIR server."
+    )
+    parser.add_argument(
+        "--client-secret-file",
+        metavar="PATH",
+        type=Path,
+        help="File containing OAuth client secret (default: CLIENT_SECRET environment variable)",
+    )
+    parser.add_argument(
+        "bundles",
+        nargs="+",
+        metavar="bundle",
+        help="One or more FHIR bundle JSON files to upload",
+    )
+    args = parser.parse_args()
 
-    for bundle_file in sys.argv[1:]:
-        submit_fhir_bundle(bundle_file)
+    client_secret = load_client_secret(args.client_secret_file)
+
+    for bundle_file in args.bundles:
+        submit_fhir_bundle(bundle_file, client_secret)
 
 
 if __name__ == "__main__":
