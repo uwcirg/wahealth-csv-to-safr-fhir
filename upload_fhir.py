@@ -6,6 +6,7 @@ import os
 import sys
 import time
 from pathlib import Path
+from typing import Optional
 
 import jwt
 import requests
@@ -14,7 +15,7 @@ TOKEN_CACHE_FILE = Path(".oauth_token.json")
 TOKEN_REFRESH_SKEW_SECONDS = 60  # refresh 1 minute early
 
 
-def load_client_secret(secret_file: Path | None) -> str:
+def load_client_secret(secret_file: Optional[Path]) -> str:
     """Load OAuth client secret from a file or CLIENT_SECRET environment variable."""
 
     if secret_file is not None:
