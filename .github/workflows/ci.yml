@@ -40,15 +40,15 @@ jobs:
           fi
       - name: Run converter against test fixtures
         run: |
-          # Convert every CSV fixture in input/ (one canonical fixture per supported
+          # Convert every CSV fixture in test/input/ (one canonical fixture per supported
           # input format). Files matching *column-labels-only* are excluded — they
           # are header-only column listings, not data.
-          for csv in input/*.csv; do
+          for csv in test/input/*.csv; do
             case "$csv" in
               *column-labels-only*) continue ;;
             esac
             echo "Converting: $csv"
-            python3 convert.py "$csv" --config config.example.json --output-dir output
+            python3 convert.py "$csv" --config config.example.json --output-dir test/output
           done
       - name: Extract SAFR IG version
         id: ig-version
@@ -64,10 +64,10 @@ jobs:
           # Known upstream errors are documented in known-validation-issues.md.
           # We filter those and fail only on errors introduced by this project.
           set +e
-          # Use `find` (not `output/**/*.json`) so the validator reaches the
-          # per-facility subdirectory files at output/{date}/{facility}/*.json —
+          # Use `find` (not `test/output/**/*.json`) so the validator reaches the
+          # per-facility subdirectory files at test/output/{date}/{facility}/*.json —
           # `**` only expands recursively when `shopt -s globstar` is set.
-          VALIDATOR_OUTPUT=$(java -jar validator_cli.jar $(find output -name '*.json') \
+          VALIDATOR_OUTPUT=$(java -jar validator_cli.jar $(find test/output -name '*.json') \
             -version 4.0.1 \
             -ig hl7.fhir.us.safr#$SAFR_IG_VERSION \
             -ig https://safr-ci.nhsnlink.org/package.tgz 2>&1)

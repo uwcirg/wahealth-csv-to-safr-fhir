@@ -7,8 +7,14 @@ config.json
 __pycache__/
 *.pyc
 
+# Production input drop directory (keep the dir, never commit real data files —
+# production CSVs may contain PHI). Regression fixtures live in test/input/.
+/input/*
+!/input/.gitkeep
+
 # Generated output
 output/
+test/output/
 log/
 
 # HL7 FHIR validator (downloaded on demand; ~180 MB — do not commit)

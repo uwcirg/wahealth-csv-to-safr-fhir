@@ -1,15 +1,19 @@
 <!--
 Sync Impact Report
-- Version change: 1.6.0 → 1.7.0
+- Version change: 1.7.0 → 1.8.0
 - Modified principles:
-  - "Clear, Predictable Output" — replaced the "individual resources
-    alongside the Bundle" rule with a per-facility subdirectory layout
-    (`output/{YYYY-MM-DD}/{facility_name}/`) so multi-facility input
-    files no longer overwrite one facility's individual resources with
-    another's; added a runtime flag rule requiring an opt-in
-    `--bundles-mrs-only` mode that emits only the Bundle and
-    MeasureReport artifacts and skips the rarely-changing
-    Organization / Device / Location files.
+  - "Validation-Driven Testing" — replaced the stale "the `input/`
+    directory contains canonical test CSV files ... Plan to relocate
+    test fixtures to a `test/` directory" rule with a concrete
+    convention: canonical fixtures now live in `test/input/`, and
+    processing fixtures from that directory MUST write generated FHIR
+    to `test/output/` (mirroring the production `output/` layout) so
+    test artifacts never mix with production output. Updated the LLM
+    Development Validation steps to read fixtures from `test/input/`
+    and write to `test/output/`.
+  - "Clear, Predictable Output" — clarified that the canonical layout
+    rules describe the production `output/` tree, and that test runs
+    over `test/input/` emit the same structure under `test/output/`.
 - Added sections: None
 - Removed sections: None
 - Templates requiring updates:
@@ -19,9 +23,11 @@ Sync Impact Report
   - .specify/templates/tasks-template.md — ✅ no updates needed
   - .specify/templates/commands/ — ✅ no command files exist
 - Follow-up TODOs:
-  - README.md — ✅ resolved: feature 009-per-facility-output-layout
-    updated the "Output" section and options table to describe the
-    per-facility subdirectory layout and the `--bundles-mrs-only` flag.
+  - Physical relocation of fixtures from `input/` to `test/input/`,
+    plus the corresponding `convert.py` / CI (`.github/workflows/ci.yml`)
+    / `CLAUDE.md` / `README.md` updates that route fixture processing
+    to `test/output/`, are a separate implementation change — ⚠ pending
+    (constitution amended first to establish the convention).
 -->
 
 # WA Health SAFR CSV-to-FHIR Converter Constitution
@@ -130,10 +136,15 @@ record which IG versions they validated against so results are
 reproducible and regressions from IG version changes are detectable.
 
 **Rules:**
-- The `input/` directory contains canonical test CSV files (currently
-  `2025.10.21.Test.Facility.BedCapacity.csv`). These serve as
-  regression inputs. Plan to relocate test fixtures to a `test/`
-  directory.
+- The `test/input/` directory contains the canonical test CSV files
+  (`2025.10.21.Test.Facility.BedCapacity.csv`,
+  `2026.04.30.Test.Facility.WAHealthDict.csv`,
+  `census_20260511.FromKC.SubsetObfsctd.csv`, plus any
+  `*column-labels-only*` header references). These serve as regression
+  inputs. When the converter processes fixtures from `test/input/`,
+  generated FHIR MUST be written to `test/output/` — which mirrors the
+  production `output/` layout (see "Clear, Predictable Output") — so
+  that test artifacts never mix with production output.
 - Every supported input CSV format (see "Multi-Format CSV Input")
   MUST have at least one canonical test fixture exercised by CI's
   validation pipeline. Adding a new input format without a
@@ -166,12 +177,12 @@ reproducible and regressions from IG version changes are detectable.
   Copilot, etc.) performs development work that could affect FHIR
   output, it MUST run the same validation pipeline as GitHub CI
   before considering the work complete. Specifically:
-  1. Run the converter against all test fixtures in `input/`
+  1. Run the converter against all test fixtures in `test/input/`
      (excluding `*column-labels-only*` files):
-     `python3 convert.py "$csv" --config config.example.json --output-dir output`
+     `python3 convert.py "$csv" --config config.example.json --output-dir test/output`
   2. Extract the IG version constants from `convert.py`.
   3. Run the HL7 FHIR Validator against all generated Bundles:
-     `java -jar validator_cli.jar output/**/*.json -version 4.0.1 -ig hl7.fhir.us.safr#$SAFR_IG_VERSION -ig https://safr-ci.nhsnlink.org/package.tgz`
+     `java -jar validator_cli.jar $(find test/output -name '*.json') -version 4.0.1 -ig hl7.fhir.us.safr#$SAFR_IG_VERSION -ig https://safr-ci.nhsnlink.org/package.tgz`
   4. Zero errors required; warnings are acceptable.
   The LLM MUST NOT skip validation to save time or defer it to CI.
   If `validator_cli.jar` or Java is not available locally, the LLM
@@ -421,6 +432,11 @@ part of the user experience.
 - JSON MUST be pretty-printed (indented) for human readability.
 - Logging to both console (for immediate feedback) and timestamped
   file (for audit trail) in `log/`.
+- The layout rules above describe the production `output/` tree. Runs
+  over the regression fixtures in `test/input/` (see
+  "Validation-Driven Testing") emit the identical structure rooted at
+  `test/output/` instead, keeping test artifacts separate from
+  production output.
 
 ## Development Workflow
 
@@ -515,4 +531,4 @@ Split only when complexity demands it.
   exception and the reasoning in the relevant spec or PR — do not
   silently deviate.
 
-**Version**: 1.7.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-05-12
+**Version**: 1.8.0 | **Ratified**: 2026-04-01 | **Last Amended**: 2026-06-17
