@@ -44,7 +44,7 @@ The converter detects which of three hospital CSV layouts a file uses by inspect
 | If the header contains… | …it's treated as | Notes |
 |---|---|---|
 | `facility_guid` **and** `reporting_date` | **Original WA Health format** | one facility per file; `reporting_date` is `MM/DD/YYYY`; ~35 HRD columns present in the file are ignored |
-| `facility` **and** `reportingday` | **2026-04-30 WA Health dictionary from KC** | one facility per file; ISO `YYYY-MM-DD` dates; `covid_*`/`flu_*`/`rsv_*` and the `all_inpatient_*` totals are ignored (aggregates are recomputed from the per-area columns) |
+| `facility` **and** `reportingday` | **2026-04-30 WA Health dictionary from KC** | one facility per file; ISO `YYYY-MM-DD` dates; `covid_*`/`flu_*`/`rsv_*` are ignored. This is the only format that carries a precomputed `all_inpatient_*` total; the per-area columns are authoritative and the aggregate is derived from them, but a mismatch against the source total is logged as a warning (see [aggregates](#metric-mapping-canonical-row--fhir-measurereport-groups)) |
 | `Facility` **and** `Reporting Date` | **KC multi-hospital from MFT 2026-05-11** | Title Case headers; **many facilities and dates per file**; ISO dates; no HRD columns; per-facility identity comes from `config.json`'s `facilities` registry (see [Configuration](#configuration)) |
 
 A file whose header matches none of these is rejected with an error listing the supported formats. In particular, the data-dictionary spreadsheet `WA-HEALTH-DataDictionary.Variable Catalog.KC.2026-04-30.csv` is a *schema reference* (its rows define column names) — it is not a data file the converter ingests. The per-format column maps are documented in `specs/008-multi-format-csv-input/contracts/input-formats.md`.
@@ -65,7 +65,7 @@ Two relationship patterns drive Stage B:
 
 - **One-to-many (split):** each bed area carries only *occupied* and *capacity*, but emits **two** groups. Unoccupied is derived, never read from the CSV:
   `unoccupied = max(0, capacity − occupied)` (clamped at 0, so an inconsistent row can't produce a negative count).
-- **Many-to-one (aggregate):** several canonical areas are summed into a single higher-level group. Aggregates are always **recomputed from the per-area values** — any precomputed total in the source CSV (e.g. `all_inpatient_*`) is ignored, so totals can't contradict their parts.
+- **Many-to-one (aggregate):** several canonical areas are summed into a single higher-level group. The **per-area values are authoritative**, and each aggregate is **derived by summing them** — so the FHIR output is always internally consistent (a total can never contradict its parts). Only the *2026-04-30 WA Health dictionary from KC* format also supplies a precomputed `all_inpatient_*` total; it is not used as a data source, but the converter **reconciles** it against the computed sum and **logs a warning** if the two disagree, so an inconsistency in the source is surfaced rather than silently dropped.
 
 ```mermaid
 flowchart LR
