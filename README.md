@@ -59,7 +59,7 @@ HRD / respiratory-disease counts (COVID, influenza, RSV) appear in two of the fo
 
 ## Metric mapping (canonical row → FHIR MeasureReport groups)
 
-After format detection (`csv_formats.py`), every input row — whatever its source layout — becomes one **canonical row** carrying, per bed area, an `{area}_occ` (occupied) and `{area}_cap` (capacity) integer, plus `adult_ed` / `peds_ed`. (How each format's columns map onto those canonical fields is **Stage A**, documented in [`specs/008-multi-format-csv-input/contracts/input-formats.md`](specs/008-multi-format-csv-input/contracts/input-formats.md).) This section covers **Stage B**: how that canonical row becomes the **25 MeasureReport groups**, defined in `convert.py` (`LOINC_CODES`, `BED_MAPPINGS`, and `compute_groups()`).
+After format detection (`csv_formats.py`), every input row — whatever its source layout (see "[Input CSV formats](#input-csv-formats)", above) — becomes one **canonical row** carrying, per bed area, an `{area}_occ` (occupied) and `{area}_cap` (capacity) integer, plus `adult_ed` / `peds_ed`. (How each format's columns map onto those canonical fields is **Stage A**, documented in [`specs/008-multi-format-csv-input/contracts/input-formats.md`](specs/008-multi-format-csv-input/contracts/input-formats.md).) This section covers **Stage B**: how that canonical row becomes the **25 MeasureReport groups**, defined in `convert.py` (`LOINC_CODES`, `BED_MAPPINGS`, and `compute_groups()`).
 
 Two relationship patterns drive Stage B:
 
