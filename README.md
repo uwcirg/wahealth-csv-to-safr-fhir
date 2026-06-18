@@ -200,3 +200,85 @@ Whichever format is used, the converter processes the same data:
 - **Computed aggregates:** AllBeds, AdultTotal, PedsTotal, SpecialtyTotal (each with occupied + unoccupied counts), plus the three ED census groups — 25 MeasureReport groups in all
 
 HRD / respiratory-disease counts (COVID, influenza, RSV) appear in two of the formats but are **not** processed by this tool (the SAFR `HRDMeasure` is a separate, future scope). When a format has no `facility_guid`, the converter derives a stable identifier from the facility name + reporting date for the deterministic Bundle identifier and FHIR-server upsert key.
+
+## Metric mapping (canonical row → FHIR MeasureReport groups)
+
+After format detection (`csv_formats.py`), every input row — whatever its source layout — becomes one **canonical row** carrying, per bed area, an `{area}_occ` (occupied) and `{area}_cap` (capacity) integer, plus `adult_ed` / `peds_ed`. (How each format's columns map onto those canonical fields is **Stage A**, documented in [`specs/008-multi-format-csv-input/contracts/input-formats.md`](specs/008-multi-format-csv-input/contracts/input-formats.md).) This section covers **Stage B**: how that canonical row becomes the **25 MeasureReport groups**, defined in `convert.py` (`LOINC_CODES`, `BED_MAPPINGS`, and `compute_groups()`).
+
+Two relationship patterns drive Stage B:
+
+- **One-to-many (split):** each bed area carries only *occupied* and *capacity*, but emits **two** groups. Unoccupied is derived, never read from the CSV:
+  `unoccupied = max(0, capacity − occupied)` (clamped at 0, so an inconsistent row can't produce a negative count).
+- **Many-to-one (aggregate):** several canonical areas are summed into a single higher-level group. Aggregates are always **recomputed from the per-area values** — any precomputed total in the source CSV (e.g. `all_inpatient_*`) is ignored, so totals can't contradict their parts.
+
+```mermaid
+flowchart LR
+    subgraph CR["Canonical row (per area: occ + cap)"]
+      AI[adult_icu]
+      PI[peds_icu]
+      AA[adult_acute]
+      PA[peds_acute]
+      NI[neonatal_icu]
+      NU[nursery]
+      SU[surge]
+      OT[other_inpatient]
+      AE[adult_ed]
+      PE[peds_ed]
+    end
+
+    AI -->|split| G1["AdultICU Occupied + Unoccupied"]
+    PI -->|split| G2["PedsICU Occupied + Unoccupied"]
+    AA -->|split| G3["AdultNonICU Occupied + Unoccupied"]
+    PA -->|split| G4["PedsNonICU Occupied + Unoccupied"]
+    NI -->|split| G5["NICUTotal Occupied + Unoccupied"]
+    NU -->|split| G6["Nursery Occupied + Unoccupied"]
+    SU -->|split| G7["SurgeActive Occupied + Unoccupied"]
+
+    AI & AA --> AT["AdultTotal (sum)"]
+    PI & PA --> PT["PedsTotal (sum)"]
+    NI & NU --> ST["SpecialtyTotal (sum)"]
+    AI & PI & AA & PA & NI & NU & SU & OT --> AB["AllBeds (sum of all 8)"]
+
+    AE --> AED[AdultEDCensus]
+    PE --> PED[PedsEDTotalCensus]
+    AE & PE --> TED["TotalEDCensus (sum)"]
+```
+
+### Direct bed-area groups — one-to-many (7 areas → 14 groups)
+
+Each row below is one canonical area producing an *occupied* and an *unoccupied* group (`BED_MAPPINGS` + `LOINC_CODES`):
+
+| Canonical area | Occupied group (LOINC) | Unoccupied group (LOINC) |
+|---|---|---|
+| `adult_icu` | Adult ICU Census — `112575-6` | Adult ICU Unoccupied — `112574-9` |
+| `peds_icu` | Peds ICU Census — `112562-4` | Peds ICU Unoccupied — `112561-6` |
+| `adult_acute` | Adult Non-ICU Census — `112572-3` | Adult Non-ICU Unoccupied — `112571-5` |
+| `peds_acute` | Peds Non-ICU Census — `112559-0` | Peds Non-ICU Unoccupied — `112558-2` |
+| `neonatal_icu` | NICU Total Census — `112545-9` | NICU Total Unoccupied — `112544-2` |
+| `nursery` | Nursery Census — `112535-0` | Nursery Unoccupied — `112534-3` |
+| `surge` | Surge Total Active Census — `112525-1` | Surge Total Active Unoccupied — `112524-4` |
+
+> `other_inpatient` carries `occ`/`cap` too, but has **no direct group** — it contributes only to the `AllBeds` aggregate below.
+
+### Computed aggregates — many-to-one (→ 8 groups)
+
+Each aggregate sums the occupied (and, separately, the derived unoccupied) values of its inputs:
+
+| Aggregate group | Inputs summed | Occupied group (LOINC) | Unoccupied group (LOINC) |
+|---|---|---|---|
+| AllBeds | **all 8** areas (incl. `other_inpatient`) | All Beds Census — `112579-8` | All Beds Unoccupied — `112578-0` |
+| AdultTotal | `adult_icu` + `adult_acute` | Adult Total Census — `112577-2` | Adult Total Unoccupied — `112576-4` |
+| PedsTotal | `peds_icu` + `peds_acute` | Peds Total Census — `112564-0` | Peds Total Unoccupied — `112563-2` |
+| SpecialtyTotal | `neonatal_icu` + `nursery` | Specialty Total Census — `112551-7` | Specialty Total Unoccupied — `112550-9` |
+
+### ED groups (→ 3 groups)
+
+ED metrics are census counts only (no capacity, so no unoccupied); the total is a many-to-one sum:
+
+| ED group | Source | LOINC |
+|---|---|---|
+| AdultEDCensus | `adult_ed` | `112512-9` |
+| PedsEDTotalCensus | `peds_ed` | `112510-3` |
+| TotalEDCensus | `adult_ed` + `peds_ed` | `112508-7` |
+
+**Total: 14 direct + 8 aggregate + 3 ED = 25 MeasureReport groups per row.**
