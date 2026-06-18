@@ -15,8 +15,11 @@ A NormalizedRow is a plain dict with: ``facility_name`` (str),
 Stdlib only — no runtime dependencies.
 """
 
+import logging
 import re
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 # Canonical bed-area names used throughout the converter. All eight participate
 # in the AllBeds aggregate; the first seven are also reported individually.
@@ -84,6 +87,11 @@ SUPPORTED_FORMATS = [
             "surge": ("surge_occ", "surge_cap"),
             "other": ("other_occ", "other_cap"),
         },
+        # Precomputed all-inpatient total carried by this format only. The
+        # per-area columns above are authoritative; this total is never used as a
+        # data source, but parse_rows reconciles it against the computed sum and
+        # warns on mismatch. (occ_col, cap_col)
+        "total_columns": ("all_inpatient_occ", "all_inpatient_cap"),
     },
     {
         "id": "kc_mft_2026_05_11",
@@ -182,6 +190,41 @@ def _required_source_columns(descriptor):
     return cols
 
 
+def _reconcile_totals(record, raw, descriptor):
+    """Warn when a format's precomputed all-inpatient total disagrees with the
+    sum of the per-area columns.
+
+    The per-area values are authoritative and the aggregate is always derived
+    from them; this check only surfaces an inconsistency in the source data. It
+    is a no-op for formats without a ``total_columns`` entry and is skipped when
+    the source leaves the total blank.
+    """
+    total_cols = descriptor.get("total_columns")
+    if not total_cols:
+        return
+    occ_col, cap_col = total_cols
+    for source_col, area_suffix, label in (
+        (occ_col, "_occ", "occupied"),
+        (cap_col, "_cap", "capacity"),
+    ):
+        raw_value = raw.get(source_col)
+        if raw_value is None or raw_value.strip() == "":
+            continue  # source omitted the total — nothing to reconcile
+        source_total = int(raw_value)
+        computed = sum(record[f"{area}{area_suffix}"] for area in descriptor["bed_columns"])
+        if source_total != computed:
+            logger.warning(
+                "Source %s total (%s=%d) disagrees with the sum of per-area "
+                "columns (%d) for facility %r on %s; using the per-area sum.",
+                label,
+                source_col,
+                source_total,
+                computed,
+                record["facility_name"],
+                record["reporting_date"].isoformat(),
+            )
+
+
 def parse_rows(reader, descriptor):
     """Map a csv.DictReader over a known format to a list of NormalizedRow dicts.
 
@@ -213,6 +256,7 @@ def parse_rows(reader, descriptor):
         for area, (occ_col, cap_col) in descriptor["bed_columns"].items():
             record[f"{area}_occ"] = safe_int(raw.get(occ_col))
             record[f"{area}_cap"] = safe_int(raw.get(cap_col))
+        _reconcile_totals(record, raw, descriptor)
         records.append(record)
 
     if not records:

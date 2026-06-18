@@ -2,6 +2,7 @@
 
 import csv
 import datetime
+import io
 import os
 import subprocess
 import sys
@@ -177,6 +178,76 @@ class TestParseRowsWaHealthDict(unittest.TestCase):
         # And the normalized record has no covid_*/flu_*/rsv_*/all_inpatient_* keys.
         for key in records[0]:
             self.assertFalse(key.startswith(("covid_", "flu_", "rsv_", "all_inpatient_")))
+
+
+DICT_DESCRIPTOR = next(d for d in SUPPORTED_FORMATS if d["id"] == "wahealth_dict_2026_04_30")
+
+
+def _dict_csv(all_inpatient_occ, all_inpatient_cap, *, occ=1, cap=2):
+    """Build a one-row wahealth_dict CSV with every bed area set to (occ, cap) and
+    the precomputed all_inpatient totals set explicitly. With the defaults there
+    are 8 areas, so the per-area sums are 8 (occ) and 16 (cap)."""
+    cols = {
+        "facility": "Test Hospital",
+        "reportingday": "2026-04-29",
+        "prevd_adult_ed": "0",
+        "prevd_ped_ed": "0",
+    }
+    for occ_col, cap_col in DICT_DESCRIPTOR["bed_columns"].values():
+        cols[occ_col] = str(occ)
+        cols[cap_col] = str(cap)
+    cols["all_inpatient_occ"] = "" if all_inpatient_occ is None else str(all_inpatient_occ)
+    cols["all_inpatient_cap"] = "" if all_inpatient_cap is None else str(all_inpatient_cap)
+    return ",".join(cols.keys()) + "\n" + ",".join(cols.values()) + "\n"
+
+
+def _parse_dict(text):
+    return parse_rows(csv.DictReader(io.StringIO(text)), DICT_DESCRIPTOR)
+
+
+class TestReconcileTotals(unittest.TestCase):
+    """The precomputed all_inpatient_* total (carried only by the wahealth_dict
+    format) is reconciled against the per-area sum and a mismatch is warned."""
+
+    def test_matching_total_does_not_warn(self):
+        # 8 areas at occ=1/cap=2 → sums of 8 and 16; matching totals stay silent.
+        with self.assertNoLogs("csv_formats", level="WARNING"):
+            _parse_dict(_dict_csv(8, 16))
+
+    def test_mismatched_occupied_total_warns(self):
+        with self.assertLogs("csv_formats", level="WARNING") as cm:
+            _parse_dict(_dict_csv(999, 16))
+        self.assertEqual(len(cm.records), 1)
+        msg = cm.output[0]
+        self.assertIn("all_inpatient_occ", msg)
+        self.assertIn("999", msg)
+        self.assertIn("Test Hospital", msg)
+
+    def test_mismatched_capacity_total_warns(self):
+        with self.assertLogs("csv_formats", level="WARNING") as cm:
+            _parse_dict(_dict_csv(8, 999))
+        self.assertIn("all_inpatient_cap", cm.output[0])
+
+    def test_blank_total_is_skipped(self):
+        # Source leaves the totals empty → nothing to reconcile, no warning.
+        with self.assertNoLogs("csv_formats", level="WARNING"):
+            _parse_dict(_dict_csv(None, None))
+
+    def test_real_fixture_warns_on_deliberate_mismatch(self):
+        # The committed fixture sets all_inpatient_occ/cap to 777/888 on purpose.
+        with self.assertLogs("csv_formats", level="WARNING"):
+            _read(DICT_FIXTURE)
+
+    def test_per_area_values_still_authoritative_despite_mismatch(self):
+        # The warning is advisory; the parsed values come from the area columns.
+        records = _parse_dict(_dict_csv(999, 999))
+        self.assertEqual(records[0]["adult_icu_occ"], 1)
+        self.assertEqual(records[0]["adult_icu_cap"], 2)
+
+    def test_formats_without_totals_have_no_total_columns(self):
+        for d in SUPPORTED_FORMATS:
+            if d["id"] != "wahealth_dict_2026_04_30":
+                self.assertNotIn("total_columns", d, d["id"])
 
 
 class TestParseRowsErrors(unittest.TestCase):
