@@ -31,7 +31,7 @@ output goes to `test/output/`. Production default (`./output`) and `convert.py` 
 
 **Purpose**: Confirm starting state before relocating anything
 
-- [ ] T001 Confirm the working tree is on branch `011-relocate-test-fixtures` and clean, and that the four fixtures exist in `input/` (`2025.10.21.Test.Facility.BedCapacity.csv`, `2025.10.21.Test.Facility.BedCapacity.column-labels-only.csv`, `2026.04.30.Test.Facility.WAHealthDict.csv`, `census_20260511.FromKC.SubsetObfsctd.csv`)
+- [X] T001 Confirm the working tree is on branch `011-relocate-test-fixtures` and clean, and that the four fixtures exist in `input/` (`2025.10.21.Test.Facility.BedCapacity.csv`, `2025.10.21.Test.Facility.BedCapacity.column-labels-only.csv`, `2026.04.30.Test.Facility.WAHealthDict.csv`, `census_20260511.FromKC.SubsetObfsctd.csv`)
 
 ---
 
@@ -41,8 +41,8 @@ output goes to `test/output/`. Production default (`./output`) and `convert.py` 
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Relocate the fixtures preserving git history: `mkdir -p test/input && git mv input/*.csv test/input/`, then remove the now-empty directory with `rmdir input` (verifies FR-001, FR-002)
-- [ ] T003 [P] Add `test/output/` to `.gitignore` directly beneath the existing `output/` entry (FR-008)
+- [X] T002 Relocate the fixtures preserving git history: `mkdir -p test/input && git mv input/*.csv test/input/`, then remove the now-empty directory with `rmdir input` (verifies FR-001, FR-002)
+- [X] T003 [P] Add `test/output/` to `.gitignore` directly beneath the existing `output/` entry (FR-008)
 
 **Checkpoint**: Fixtures live in `test/input/`, `input/` is gone, generated test output is ignored — user stories can now begin (and run in parallel)
 
@@ -59,9 +59,9 @@ patterns.
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Convert each data fixture in `test/input/` (skipping `*column-labels-only*`) with `python3 convert.py "$csv" --config config.example.json --output-dir test/output`, confirming output lands only under `test/output/` in the per-facility layout (FR-003)
-- [ ] T005 [US1] Extract IG versions from `convert.py` and run `java -jar validator_cli.jar $(find test/output -name '*.json') -version 4.0.1 -ig hl7.fhir.us.safr#$SAFR_IG_VERSION -ig https://safr-ci.nhsnlink.org/package.tgz`; confirm zero errors except `extension-MeasureReport.supplementalData` and `Slice 'Bundle.entry:measurereport'...` (SC-002). If `validator_cli.jar`/Java is unavailable, report to the user rather than skipping
-- [ ] T006 [US1] Confirm `input/` no longer exists and `test/input/` holds all 4 fixtures (SC-001), and that a run with no `--output-dir` still writes to `./output` (SC-006, FR-004)
+- [X] T004 [US1] Convert each data fixture in `test/input/` (skipping `*column-labels-only*`) with `python3 convert.py "$csv" --config config.example.json --output-dir test/output`, confirming output lands only under `test/output/` in the per-facility layout (FR-003)
+- [X] T005 [US1] Extract IG versions from `convert.py` and run `java -jar validator_cli.jar $(find test/output -name '*.json') -version 4.0.1 -ig hl7.fhir.us.safr#$SAFR_IG_VERSION -ig https://safr-ci.nhsnlink.org/package.tgz`; confirm zero errors except `extension-MeasureReport.supplementalData` and `Slice 'Bundle.entry:measurereport'...` (SC-002). If `validator_cli.jar`/Java is unavailable, report to the user rather than skipping
+- [X] T006 [US1] Confirm `input/` no longer exists and `test/input/` holds all 4 fixtures (SC-001), and that a run with no `--output-dir` still writes to `./output` (SC-006, FR-004)
 
 **Checkpoint**: The relocated regression pipeline passes locally — this is the MVP
 
@@ -77,8 +77,8 @@ validates `test/output/`, then confirm the job is green on the branch PR.
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] In `.github/workflows/ci.yml` "Run converter against test fixtures" step, change the loop to `for csv in test/input/*.csv` and the converter call to `--output-dir test/output`, and update the explanatory comment that says "in input/" (FR-005, FR-006)
-- [ ] T008 [US2] In `.github/workflows/ci.yml` "Validate FHIR Bundles" step, change `find output` to `find test/output` and update the surrounding comment referencing `output/{date}/{facility}/*.json` to `test/output/...` (FR-005)
+- [X] T007 [US2] In `.github/workflows/ci.yml` "Run converter against test fixtures" step, change the loop to `for csv in test/input/*.csv` and the converter call to `--output-dir test/output`, and update the explanatory comment that says "in input/" (FR-005, FR-006)
+- [X] T008 [US2] In `.github/workflows/ci.yml` "Validate FHIR Bundles" step, change `find output` to `find test/output` and update the surrounding comment referencing `output/{date}/{facility}/*.json` to `test/output/...` (FR-005)
 - [ ] T009 [US2] Push the branch / open the PR and confirm the `FHIR Validation` job passes with the new paths (SC-003)
 
 **Checkpoint**: CI mirrors the local pipeline over the new paths and is green
@@ -95,9 +95,9 @@ agents run the correct paths; no maintained doc/tooling references the old fixtu
 
 ### Implementation for User Story 3
 
-- [ ] T010 [P] [US3] Update the `## LLM Validation Pipeline` section of `CLAUDE.md`: Step 1 loop to `for csv in test/input/*.csv` with `--output-dir test/output`, Step 3 validator to `$(find test/output -name '*.json')`, and the Step 3 comment referencing `output/{date}/{facility}/*.json` → `test/output/...` (FR-007, SC-004)
-- [ ] T011 [P] [US3] Update `README.md` only where it names the regression-fixture directory or the test workflow to `test/input/`/`test/output/`; leave generic production examples (placeholder input filename + default `./output`) unchanged. If no such references exist, note that no change was needed (FR-009)
-- [ ] T012 [US3] Run `grep -rn 'input/' .github/workflows CLAUDE.md README.md` and confirm no result names the old `input/` directory as the fixture source (FR-010, SC-005) — depends on T007, T008, T010, T011
+- [X] T010 [P] [US3] Update the `## LLM Validation Pipeline` section of `CLAUDE.md`: Step 1 loop to `for csv in test/input/*.csv` with `--output-dir test/output`, Step 3 validator to `$(find test/output -name '*.json')`, and the Step 3 comment referencing `output/{date}/{facility}/*.json` → `test/output/...` (FR-007, SC-004)
+- [X] T011 [P] [US3] Update `README.md` only where it names the regression-fixture directory or the test workflow to `test/input/`/`test/output/`; leave generic production examples (placeholder input filename + default `./output`) unchanged. If no such references exist, note that no change was needed (FR-009)
+- [X] T012 [US3] Run `grep -rn 'input/' .github/workflows CLAUDE.md README.md` and confirm no result names the old `input/` directory as the fixture source (FR-010, SC-005) — depends on T007, T008, T010, T011
 
 **Checkpoint**: Documentation and tooling are consistent; no stale fixture-path references remain
 
@@ -107,8 +107,8 @@ agents run the correct paths; no maintained doc/tooling references the old fixtu
 
 **Purpose**: Final end-to-end confirmation
 
-- [ ] T013 Run the full `specs/011-relocate-test-fixtures/quickstart.md` verification sequence end to end and confirm every acceptance check (SC-001 through SC-006) passes
-- [ ] T014 [P] Sanity-check that unrelated checks still pass: `ruff check convert.py csv_formats.py tests` and `python -m unittest discover -s tests -p "test_*.py"` (no source changed, expect green)
+- [X] T013 Run the full `specs/011-relocate-test-fixtures/quickstart.md` verification sequence end to end and confirm every acceptance check (SC-001 through SC-006) passes
+- [X] T014 [P] Sanity-check that unrelated checks still pass: `ruff check convert.py csv_formats.py tests` and `python -m unittest discover -s tests -p "test_*.py"` (no source changed, expect green)
 
 ---
 

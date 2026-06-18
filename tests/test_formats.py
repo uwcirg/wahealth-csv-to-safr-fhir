@@ -27,9 +27,9 @@ from convert import (  # noqa: E402
 )
 
 
-ORIGINAL_FIXTURE = os.path.join(REPO_ROOT, "input", "2025.10.21.Test.Facility.BedCapacity.csv")
-DICT_FIXTURE = os.path.join(REPO_ROOT, "input", "2026.04.30.Test.Facility.WAHealthDict.csv")
-KC_FIXTURE = os.path.join(REPO_ROOT, "input", "census_20260511.FromKC.SubsetObfsctd.csv")
+ORIGINAL_FIXTURE = os.path.join(REPO_ROOT, "test", "input", "2025.10.21.Test.Facility.BedCapacity.csv")
+DICT_FIXTURE = os.path.join(REPO_ROOT, "test", "input", "2026.04.30.Test.Facility.WAHealthDict.csv")
+KC_FIXTURE = os.path.join(REPO_ROOT, "test", "input", "census_20260511.FromKC.SubsetObfsctd.csv")
 CATALOG_FILE = os.path.join(REPO_ROOT, "WA-HEALTH-DataDictionary.Variable Catalog.KC.2026-04-30.csv")
 CONFIG = os.path.join(REPO_ROOT, "config.example.json")
 

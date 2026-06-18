@@ -46,15 +46,15 @@ LLM agents **MUST** run the following four-step FHIR validation pipeline before 
 
 ### Step 1: Convert test fixtures
 
-Run the converter against every CSV fixture in `input/` (one canonical fixture per supported input format), excluding `*column-labels-only*` files (header-only column listings, not data):
+Run the converter against every CSV fixture in `test/input/` (one canonical fixture per supported input format), excluding `*column-labels-only*` files (header-only column listings, not data):
 
 ```bash
-for csv in input/*.csv; do
+for csv in test/input/*.csv; do
   case "$csv" in
     *column-labels-only*) continue ;;
   esac
   echo "Converting: $csv"
-  python3 convert.py "$csv" --config config.example.json --output-dir output
+  python3 convert.py "$csv" --config config.example.json --output-dir test/output
 done
 ```
 
@@ -70,12 +70,12 @@ NHSN_SAFR_IG_VERSION=$(grep -oP 'NHSN_SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py
 ### Step 3: Validate FHIR Bundles
 
 Run the FHIR validator against all generated output. Use `find` (not
-`output/**/*.json`) so the validator reaches the per-facility subdirectory files
-at `output/{date}/{facility}/*.json` — `**` only expands recursively when
+`test/output/**/*.json`) so the validator reaches the per-facility subdirectory files
+at `test/output/{date}/{facility}/*.json` — `**` only expands recursively when
 `shopt -s globstar` is set:
 
 ```bash
-java -jar validator_cli.jar $(find output -name '*.json') \
+java -jar validator_cli.jar $(find test/output -name '*.json') \
   -version 4.0.1 \
   -ig hl7.fhir.us.safr#$SAFR_IG_VERSION \
   -ig https://safr-ci.nhsnlink.org/package.tgz

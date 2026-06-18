@@ -28,8 +28,8 @@ def _normalized_json_text(path):
 
 REPO_ROOT = os.path.join(os.path.dirname(__file__), "..")
 CONFIG = os.path.join(REPO_ROOT, "config.example.json")
-SINGLE_FACILITY_FIXTURE = os.path.join(REPO_ROOT, "input", "2025.10.21.Test.Facility.BedCapacity.csv")
-MULTI_FACILITY_FIXTURE = os.path.join(REPO_ROOT, "input", "census_20260511.FromKC.SubsetObfsctd.csv")
+SINGLE_FACILITY_FIXTURE = os.path.join(REPO_ROOT, "test", "input", "2025.10.21.Test.Facility.BedCapacity.csv")
+MULTI_FACILITY_FIXTURE = os.path.join(REPO_ROOT, "test", "input", "census_20260511.FromKC.SubsetObfsctd.csv")
 
 INDIVIDUAL_RESOURCE_NAMES = {"Organization.json", "Device.json", "Location.json", "MeasureReport.json"}
 SKIPPED_WHEN_BUNDLES_MRS_ONLY = {"Organization.json", "Device.json", "Location.json"}
