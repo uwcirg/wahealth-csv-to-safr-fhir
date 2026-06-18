@@ -245,7 +245,7 @@ class TestOriginalFormatNoRegression(unittest.TestCase):
 
         config = load_config(os.path.join(REPO_ROOT, "config.example.json"))
         fixture = os.path.join(
-            REPO_ROOT, "input", "2025.10.21.Test.Facility.BedCapacity.csv"
+            REPO_ROOT, "test", "input", "2025.10.21.Test.Facility.BedCapacity.csv"
         )
         descriptor, records = parse_csv(fixture)
         produced = {}

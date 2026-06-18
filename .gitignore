@@ -9,6 +9,7 @@ __pycache__/
 
 # Generated output
 output/
+test/output/
 log/
 
 # HL7 FHIR validator (downloaded on demand; ~180 MB — do not commit)

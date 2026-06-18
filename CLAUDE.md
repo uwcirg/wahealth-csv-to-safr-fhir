@@ -1,6 +1,6 @@
 # wahealth-csv-to-safr-fhir Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-06-03
+Auto-generated from all feature plans. Last updated: 2026-06-17
 
 ## Active Technologies
 - Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning) (002-ig-version-tracking)
@@ -12,6 +12,8 @@ Auto-generated from all feature plans. Last updated: 2026-06-03
 - Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff`, `pytest`, `validator_cli.jar`, `gitleaks` (009-per-facility-output-layout)
 - Python 3 (standard library only at runtime) + None at runtime. Stdlib `random` (seedable PRNG), `argparse`, `logging`. Dev: `pytest`, `ruff`, `validator_cli.jar`, `gitleaks` (010-fuzz-counts)
 - Filesystem — CSV input, JSON output, JSON config (unchanged) (010-fuzz-counts)
+- Python 3 (stdlib only at runtime) — unchanged; no source code edits to `convert.py` + None at runtime. Dev/CI: `ruff`, `validator_cli.jar` (HL7 FHIR validator), `gitleaks` (011-relocate-test-fixtures)
+- Filesystem — CSV input fixtures, generated JSON output (011-relocate-test-fixtures)
 
 - Python 3 (stdlib only for runtime; dev tools use pip) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks` (secret scanning) (001-constitution-alignment)
 
@@ -31,9 +33,9 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3 (stdlib only for runtime; dev tools use pip): Follow standard conventions
 
 ## Recent Changes
+- 011-relocate-test-fixtures: Added Python 3 (stdlib only at runtime) — unchanged; no source code edits to `convert.py` + None at runtime. Dev/CI: `ruff`, `validator_cli.jar` (HL7 FHIR validator), `gitleaks`
 - 010-fuzz-counts: Added Python 3 (standard library only at runtime) + None at runtime. Stdlib `random` (seedable PRNG), `argparse`, `logging`. Dev: `pytest`, `ruff`, `validator_cli.jar`, `gitleaks`
 - 009-per-facility-output-layout: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff`, `pytest`, `validator_cli.jar`, `gitleaks`
-- 008-multi-format-csv-input: Added Python 3 (stdlib only at runtime) + None at runtime. Dev: `ruff` (linter), `validator_cli.jar` (FHIR validation), `gitleaks`/`git-secrets` (secret scanning)
 
 
 <!-- MANUAL ADDITIONS START -->
@@ -44,15 +46,15 @@ LLM agents **MUST** run the following four-step FHIR validation pipeline before 
 
 ### Step 1: Convert test fixtures
 
-Run the converter against every CSV fixture in `input/` (one canonical fixture per supported input format), excluding `*column-labels-only*` files (header-only column listings, not data):
+Run the converter against every CSV fixture in `test/input/` (one canonical fixture per supported input format), excluding `*column-labels-only*` files (header-only column listings, not data):
 
 ```bash
-for csv in input/*.csv; do
+for csv in test/input/*.csv; do
   case "$csv" in
     *column-labels-only*) continue ;;
   esac
   echo "Converting: $csv"
-  python3 convert.py "$csv" --config config.example.json --output-dir output
+  python3 convert.py "$csv" --config config.example.json --output-dir test/output
 done
 ```
 
@@ -68,12 +70,12 @@ NHSN_SAFR_IG_VERSION=$(grep -oP 'NHSN_SAFR_IG_VERSION\s*=\s*"\K[^"]+' convert.py
 ### Step 3: Validate FHIR Bundles
 
 Run the FHIR validator against all generated output. Use `find` (not
-`output/**/*.json`) so the validator reaches the per-facility subdirectory files
-at `output/{date}/{facility}/*.json` — `**` only expands recursively when
+`test/output/**/*.json`) so the validator reaches the per-facility subdirectory files
+at `test/output/{date}/{facility}/*.json` — `**` only expands recursively when
 `shopt -s globstar` is set:
 
 ```bash
-java -jar validator_cli.jar $(find output -name '*.json') \
+java -jar validator_cli.jar $(find test/output -name '*.json') \
   -version 4.0.1 \
   -ig hl7.fhir.us.safr#$SAFR_IG_VERSION \
   -ig https://safr-ci.nhsnlink.org/package.tgz
