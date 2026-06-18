@@ -71,8 +71,8 @@ Two relationship patterns drive Stage B:
 flowchart LR
     subgraph CR["Canonical row (per area: occ + cap)"]
       AI[adult_icu]
-      PI[peds_icu]
       AA[adult_acute]
+      PI[peds_icu]
       PA[peds_acute]
       NI[neonatal_icu]
       NU[nursery]
@@ -83,8 +83,8 @@ flowchart LR
     end
 
     AI -->|split| G1["AdultICU Occupied + Unoccupied"]
-    PI -->|split| G2["PedsICU Occupied + Unoccupied"]
     AA -->|split| G3["AdultNonICU Occupied + Unoccupied"]
+    PI -->|split| G2["PedsICU Occupied + Unoccupied"]
     PA -->|split| G4["PedsNonICU Occupied + Unoccupied"]
     NI -->|split| G5["NICUTotal Occupied + Unoccupied"]
     NU -->|split| G6["Nursery Occupied + Unoccupied"]
@@ -96,8 +96,8 @@ flowchart LR
     AI & PI & AA & PA & NI & NU & SU & OT --> AB["AllBeds (sum of all 8)"]
 
     AE --> AED[AdultEDCensus]
-    PE --> PED[PedsEDTotalCensus]
     AE & PE --> TED["TotalEDCensus (sum)"]
+    PE --> PED[PedsEDTotalCensus]
 ```
 
 ### Direct bed-area groups — one-to-many (7 areas → 14 groups)
