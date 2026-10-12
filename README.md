@@ -127,6 +127,10 @@ Each aggregate sums the occupied (and, separately, the derived unoccupied) value
 | PedsTotal | `peds_icu` + `peds_acute` | Peds Total Census — `112564-0` | Peds Total Unoccupied — `112563-2` |
 | SpecialtyTotal | `neonatal_icu` + `nursery` | Specialty Total Census — `112551-7` | Specialty Total Unoccupied — `112550-9` |
 
+> **Where `surge` is counted:** `surge` is included in `AllBeds` and reported in its own direct groups, but it is **not** part of `AdultTotal`, `PedsTotal`, or `SpecialtyTotal`.
+>
+> **Why:** neither SAFR IG defines the composition of these totals. The HL7 base IG (`hl7.fhir.us.safr`) and the CDC NHSN content IG (`gov.cdc.nhsn.safr`, which defines the `BedCapacityMeasure` these reports reference) give only the concept name and LOINC code — e.g. `AdultTotalOccupied` = "Adult Total Census" = `112577-2` "Adult inpatient beds [#] Facility Occupied.total" — with no inclusion or exclusion rules (see the NHSN IG's [bed capacity mapping](https://www.cdc.gov/nhsn/fhirportal/safr/ig/1.0.0/bed-capacity-mapping.html)). The converter treats each subtotal as the sum of its own ICU + non-ICU pair, and treats surge as a sibling category, since the NHSN measure gives surge its own separate family of codes. Having said that, the WA Health data dictionary does describe `surge_cap` / `surge_occ` as *adult* beds. So, TBD whether we should change how this is handled in this software.
+
 ### ED groups (→ 3 groups)
 
 ED metrics are census counts only (no capacity, so no unoccupied); the total is a many-to-one sum:
